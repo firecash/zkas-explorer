@@ -5,7 +5,6 @@ import Shield from "../assets/verified_user.svg";
 import Coins from "../assets/coins.svg";
 import Trophy from "../assets/trophy.svg";
 import Box from "../assets/box.svg";
-import Dag from "../assets/dag.svg";
 import Time from "../assets/time.svg";
 import Landslide from "../assets/landslide.svg";
 import Card from "../layout/Card";
@@ -59,7 +58,7 @@ export default function Analytics() {
   return (
     <>
       {/* Hero */}
-      <div className="grid grid-cols-1 rounded-4xl bg-white px-4 py-8 sm:px-8 md:grid-cols-[6fr_5fr] md:py-12 md:ps-16">
+      <div className="flex flex-col rounded-4xl bg-white px-4 py-8 sm:px-8 md:py-12 md:ps-16">
         <div className="flex flex-col justify-center gap-y-2">
           <div className="flex items-center gap-x-3">
             <AnalyticsIcon className="h-8 w-8 fill-primary" />
@@ -70,7 +69,6 @@ export default function Analytics() {
             keeps every balance private.
           </span>
         </div>
-        <Dag className="mt-4 h-full w-full md:mt-0 md:ps-10" />
       </div>
 
       {/* Network at a glance */}

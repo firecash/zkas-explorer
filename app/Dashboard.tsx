@@ -1,7 +1,6 @@
 import AccountBalanceWallet from "./assets/account_balance_wallet.svg";
 import Box from "./assets/box.svg";
 import Coins from "./assets/coins.svg";
-import Dag from "./assets/dag.svg";
 import Shield from "./assets/verified_user.svg";
 import Swap from "./assets/swap.svg";
 import Time from "./assets/time.svg";
@@ -50,7 +49,7 @@ const Dashboard = () => {
   return (
     <>
       {/* Hero — short, search-first */}
-      <div className="grid grid-cols-1 md:grid-cols-[6fr_5fr] rounded-4xl bg-white px-4 py-10 sm:px-8 sm:py-10 md:ps-20 md:py-14 lg:ps-24 xl:ps-36">
+      <div className="flex flex-col rounded-4xl bg-white px-4 py-10 sm:px-8 sm:py-10 md:ps-20 md:py-14 lg:ps-24 xl:ps-36">
         <div className="flex w-full flex-col gap-y-3 justify-center">
           <span className="text-3xl lg:text-[54px]">FireCash Explorer</span>
           <span className="mb-4 text-gray-500">
@@ -58,7 +57,6 @@ const Dashboard = () => {
           </span>
           <SearchBox value={search} onChange={setSearch} className="w-full py-4" />
         </div>
-        <Dag className="w-full h-full md:ps-13 mt-2 md:mt-0" />
       </div>
 
       {/* LIVE FEED — the centerpiece */}
