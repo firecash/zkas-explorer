@@ -138,7 +138,7 @@ const Dashboard = () => {
             icon={<Landslide className="w-5" />}
             loading={isLoadingCoinSupply}
           />
-          <DashboardBox description="Average block time" value={"0.1"} unit="s" icon={<Time className="w-5" />} />
+          <DashboardBox description="Average block time" value={"1"} unit="s" icon={<Time className="w-5" />} />
           <DashboardBox
             description="Shielded notes"
             value={numeral(shielded?.noteCount ?? 0).format("0,0")}
