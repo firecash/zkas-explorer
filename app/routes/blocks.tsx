@@ -2,6 +2,7 @@ import KasLink from "../KasLink";
 import PageTable from "../PageTable";
 import Box from "../assets/box.svg";
 import { useBlockdagInfo } from "../hooks/useBlockDagInfo";
+import { useNetworkInfo } from "../hooks/useNetworkInfo";
 import { useBlockReward } from "../hooks/useBlockReward";
 import { type Block, useIncomingBlocks } from "../hooks/useIncomingBlocks";
 import { useSocketCommand } from "../hooks/useSocketCommand";
@@ -37,6 +38,7 @@ export function meta() {
 
 export default function Blocks() {
   const { data: blockDagInfo, isLoading: isLoadingBlockDagInfo } = useBlockdagInfo();
+  const { data: networkInfo, isLoading: isLoadingNetworkInfo } = useNetworkInfo();
   const { data: blockReward, isLoading: isLoadingBlockReward } = useBlockReward();
   const { data: transactionsCount, isLoading: isLoadingTxCount } = useTransactionsCount();
 
@@ -70,6 +72,7 @@ export default function Blocks() {
           />
           <Card loading={isLoadingTxCount} title="Total transactions" value={`> ${totalTxCount} M `} />
           <Card title="Average block rate" value={`${numeral(avgBlockTime).format("0.0")} bps`} />
+          <Card loading={isLoadingNetworkInfo} title="Network nodes" value={`${networkInfo?.nodes ?? "—"}`} />
           <Card
             loading={isLoadingBlockReward}
             title="Block rewards"
