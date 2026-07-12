@@ -31,13 +31,19 @@ export const useIncomingBlocks = () => {
 
   const blocks = useMemo(() => (data ?? []).slice(0, 20), [data]);
 
-  // Average block time from the timestamp span of the recent window.
+  // Average block rate over the recent window. Defensive on two axes: the feed
+  // is deduplicated by hash (a backend that repeats blocks must not inflate the
+  // rate — the live "9.3 bps" bug), and the span uses min/max timestamps rather
+  // than first/last (block timestamps are miner-supplied and not monotonic in
+  // acceptance order on a DAG).
   const avgBlockTime = useMemo(() => {
     if (!data || data.length < 2) return 0;
-    const newest = Number(data[0].timestamp);
-    const oldest = Number(data[data.length - 1].timestamp);
-    const spanSec = (newest - oldest) / 1000;
-    return spanSec > 0 ? (data.length - 1) / spanSec : 0;
+    const uniq = new Map<string, number>();
+    for (const b of data) uniq.set(b.block_hash, Number(b.timestamp));
+    if (uniq.size < 2) return 0;
+    const ts = [...uniq.values()];
+    const spanSec = (Math.max(...ts) - Math.min(...ts)) / 1000;
+    return spanSec > 0 ? (uniq.size - 1) / spanSec : 0;
   }, [data]);
 
   const transactions = useMemo(() => {
