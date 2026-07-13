@@ -66,7 +66,10 @@ export default function TransactionDetails() {
     );
   }
 
-  const confirmations = confirmationsOf(virtualChainBlueScore, transaction?.accepting_block_blue_score);
+  // The API computes this against the tip in matching units; only fall back to the
+  // client-side calc for an older API that doesn't send it.
+  const confirmations =
+    transaction?.confirmations ?? confirmationsOf(virtualChainBlueScore, transaction?.accepting_block_blue_score);
   const transactionSum = (transaction.outputs || []).reduce((sum, output) => sum + output.amount, 0);
   const displayKAS = (x: number) => numeral((x || 0) / 1_0000_0000).format("0,0.00[000000]");
   const displaySum = displayKAS(transactionSum);

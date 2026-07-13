@@ -25,6 +25,9 @@ export interface TransactionData {
   block_hash: string[];
   block_time: number;
   is_accepted: boolean;
+  /// Authoritative confirmation count from the API (tip blue score − this tx's
+  /// accepting blue score). Prefer this over recomputing it client-side.
+  confirmations?: number;
   accepting_block_hash: string;
   accepting_block_blue_score: number;
   accepting_block_time: number;
