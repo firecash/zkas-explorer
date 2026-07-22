@@ -9,6 +9,7 @@ export const useTransactionsCount = () =>
       const { data } = await axios.get(`${API_BASE}/transactions/count/`);
       return data as TransactionCount;
     },
+    refetchInterval: 30000,
   });
 
 interface TransactionCount {

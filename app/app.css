@@ -155,3 +155,115 @@ h2 {
 .shieldscan-shield svg path {
     fill: var(--color-primary);
 }
+
+/* --- Shielded mesh overlay tags (hero) ---------------------------------- */
+/* HTML layer over the three.js canvas: hash fragments that "encrypt" into
+   dots, plus ambient chain telemetry. Positioned by the mesh component. */
+.meshtags {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    /* Above the hero copy layer (z-10) so tag taps land; only .meshtag--link
+       accepts pointer events, so the copy/search stay fully usable. */
+    z-index: 15;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1;
+}
+.meshtag {
+    position: absolute;
+    display: inline-block;
+    white-space: nowrap;
+    /* never bleed past the frame edge — clip with an ellipsis instead */
+    max-width: 56%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #5ff2df;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 45%, transparent);
+    animation: meshtag-float 2.6s ease-out forwards;
+}
+.meshtag--dim {
+    color: var(--color-gray-500);
+    text-shadow: none;
+    animation: meshtag-ambient 4s ease-in-out forwards;
+}
+.meshtag--block {
+    color: var(--color-primary);
+    text-shadow: none;
+    font-size: 11px;
+    animation: meshtag-ambient 4s ease-in-out forwards;
+}
+@keyframes meshtag-float {
+    0% { opacity: 0; translate: 0 8px; }
+    12% { opacity: 1; }
+    75% { opacity: 0.9; }
+    100% { opacity: 0; translate: 0 -14px; }
+}
+@keyframes meshtag-ambient {
+    0% { opacity: 0; }
+    25% { opacity: 0.6; }
+    70% { opacity: 0.6; }
+    100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .meshtag, .meshtag--dim, .meshtag--block {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/* Clickable mesh tags: real chain objects, styled as little data pills. */
+.meshtag--link {
+    pointer-events: auto;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--color-white) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    backdrop-filter: blur(2px);
+}
+.meshtag--link:hover {
+    animation-play-state: paused;
+    opacity: 1 !important;
+    border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+.meshtag--link::after {
+    content: attr(data-info);
+    display: block;
+    margin-top: 3px;
+    font-size: 9px;
+    color: var(--color-gray-500);
+    text-shadow: none;
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
+}
+.meshtag--link:hover::after {
+    opacity: 1;
+    max-width: none;
+}
+
+/* Sparkline tip: a soft breathing dot on the newest data point. */
+.spark-tip {
+    animation: spark-breathe 2.2s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+@keyframes spark-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .spark-tip { animation: none; }
+}
+
+
+/* Safety net: nothing may ever scroll the page sideways on a phone. */
+html, body {
+    overflow-x: hidden;
+}

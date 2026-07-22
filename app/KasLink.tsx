@@ -4,6 +4,7 @@ import Copy from "./assets/copy.svg";
 import CopyCheck from "./assets/copycheck.svg";
 import QrCode from "./assets/qr_code.svg";
 import { useAddressNames } from "./hooks/useAddressNames";
+import { canonicalAddress } from "./utils/kaspaAddress";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -30,6 +31,9 @@ const linkTypeToAddress: Record<KasLinkProps["linkType"], string> = {
 const KasLink = ({ to, linkType, copy, qr, link, shorten, resolveName, mono }: KasLinkProps) => {
   const [clicked, setClicked] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  // Legacy-HRP addresses (pre-rebrand coinbase payouts) display, copy and link
+  // as their canonical zkas: spelling — same payload, same destination.
+  if (linkType === "address") to = canonicalAddress(to);
   const linkHref = linkTypeToAddress[linkType] + to;
 
   const { data: addressNames, isLoading: isLoading } = useAddressNames();

@@ -100,7 +100,7 @@ export function AreaChart({
       {yGrid.map((gy, i) => (
         <g key={i}>
           <line x1={m.left} x2={W - m.right} y1={sy(gy)} y2={sy(gy)} stroke={GRID} strokeWidth={1} />
-          <text x={m.left - 8} y={sy(gy) + 4} textAnchor="end" fontSize="11" fill={INK}>
+          <text x={m.left - 8} y={sy(gy) + 4} textAnchor="end" fontSize="13" fill={INK}>
             {formatY(gy)}
           </text>
         </g>
@@ -108,7 +108,7 @@ export function AreaChart({
 
       {/* x ticks */}
       {xt.map((tx, i) => (
-        <text key={i} x={sx(tx)} y={H - 10} textAnchor="middle" fontSize="11" fill={INK}>
+        <text key={i} x={sx(tx)} y={H - 10} textAnchor="middle" fontSize="13" fill={INK}>
           {formatX(tx)}
         </text>
       ))}
@@ -124,7 +124,7 @@ export function AreaChart({
             x={sx(a.x)}
             y={sy(a.y) + (a.dy ?? -10)}
             textAnchor={a.align ?? "middle"}
-            fontSize="11"
+            fontSize="13"
             fontWeight={600}
             fill="var(--color-black)"
           >
@@ -137,7 +137,7 @@ export function AreaChart({
       {marker && (
         <g>
           <circle cx={sx(marker.x)} cy={sy(marker.y)} r={5} fill={PRIMARY} stroke="var(--color-white)" strokeWidth={2} />
-          <text x={sx(marker.x) + 8} y={sy(marker.y) - 8} fontSize="11" fontWeight={600} fill="var(--color-black)">
+          <text x={sx(marker.x) + 8} y={sy(marker.y) - 8} fontSize="13" fontWeight={600} fill="var(--color-black)">
             {marker.label}
           </text>
         </g>
@@ -148,12 +148,12 @@ export function AreaChart({
         <g pointerEvents="none">
           <line x1={sx(hp.x)} x2={sx(hp.x)} y1={m.top} y2={m.top + ih} stroke={INK} strokeDasharray="3 3" strokeWidth={1} />
           <circle cx={sx(hp.x)} cy={sy(hp.y)} r={4} fill={PRIMARY} stroke="var(--color-white)" strokeWidth={2} />
-          <g transform={`translate(${Math.min(sx(hp.x) + 10, W - 150)},${m.top + 6})`}>
-            <rect width="140" height="38" rx="8" fill="var(--color-black)" opacity="0.9" />
-            <text x="10" y="16" fontSize="11" fill="var(--color-white)">
+          <g transform={`translate(${Math.min(sx(hp.x) + 10, W - 160)},${m.top + 6})`}>
+            <rect width="150" height="40" rx="8" fill="var(--color-black)" opacity="0.9" />
+            <text x="10" y="16" fontSize="13" fill="var(--color-white)">
               {formatX(hp.x)}
             </text>
-            <text x="10" y="30" fontSize="12" fontWeight={700} fill="var(--color-white)">
+            <text x="10" y="30" fontSize="14" fontWeight={700} fill="var(--color-white)">
               {formatY(hp.y)}
             </text>
           </g>
@@ -197,7 +197,7 @@ export function Donut({ value, centerTop, centerBottom }: { value: number; cente
       <text x={c} y={c - 4} textAnchor="middle" fontSize="30" fontWeight={700} fill="var(--color-black)">
         {centerTop}
       </text>
-      <text x={c} y={c + 18} textAnchor="middle" fontSize="12" fill={INK}>
+      <text x={c} y={c + 18} textAnchor="middle" fontSize="14" fill={INK}>
         {centerBottom}
       </text>
     </svg>

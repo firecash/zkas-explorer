@@ -3,10 +3,7 @@ import IconMessageBox from "../IconMessageBox";
 import ShieldScan from "../components/ShieldScan";
 import AccountBalanceWallet from "../assets/account_balance_wallet.svg";
 import Shield from "../assets/verified_user.svg";
-import Visibility from "../assets/visibility.svg";
-import Swap from "../assets/swap.svg";
 import { BRAND } from "../config/brand";
-import FooterHelper from "../layout/FooterHelper";
 import { isValidKaspaAddressSyntax } from "../utils/kaspa";
 import type { Route } from "./+types/addressdetails";
 import { useParams } from "react-router";
@@ -70,30 +67,7 @@ export default function AddressDetails() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <Visibility className="fill-primary mb-2 w-5" />
-            <div className="mb-1">Want to prove you own it?</div>
-            <span className="text-gray-500">
-              The {BRAND.name} wallet can sign a message with this address — anyone can verify the signature offline
-              without you spending or exposing anything beyond a viewing key.
-            </span>
-          </div>
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <Swap className="fill-primary mb-2 w-5" />
-            <div className="mb-1">Want to audit funds?</div>
-            <span className="text-gray-500">
-              Share the wallet's viewing key with an auditor: it reveals this address's notes (view-only) while spend
-              authority stays exclusively with the owner.
-            </span>
-          </div>
-        </div>
       </div>
-
-      <FooterHelper icon={AccountBalanceWallet}>
-        A {BRAND.name} address is a shielded (Orchard) address: it can receive encrypted notes and prove ownership,
-        without ever exposing its balance or history to the public ledger.
-      </FooterHelper>
     </>
   );
 }

@@ -96,7 +96,7 @@ export default function Analytics() {
             title="Block reward"
             loading={rewardLoading}
             value={`${numeral(reward?.blockreward ?? BRAND.initialReward).format("0,0.[000]")} ZKAS`}
-            subtext={`network: testnet`}
+            subtext="per block, minted shielded"
           />
         </CardContainer>
       </MainBox>
@@ -108,23 +108,23 @@ export default function Analytics() {
           <span className="text-2xl">Emission schedule</span>
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
-          The per-block reward starts at 6 ZKAS and decays with a 3-month half-life. Once it falls to the tail
-          floor (~year 1) a perpetual tail of <b className="text-black">0.6 ZKAS</b> is paid, stepping down once to
-          a permanent <b className="text-black">0.3 ZKAS</b> at month 24 — funding proof-of-work security forever.
+          The per-block reward starts at 60 ZKAS and decays with a 3-month half-life. Once it falls to the tail
+          floor (~month 10) a perpetual tail of <b className="text-black">6 ZKAS</b> is paid, stepping down once to
+          a permanent <b className="text-black">3 ZKAS</b> at month 24 — funding proof-of-work security forever.
           There is no fixed supply cap.
         </p>
         <AreaChart
           data={emission}
           ariaLabel="Per-block reward in ZKAS over the first four years"
-          yMax={6.4}
+          yMax={64}
           yTicks={4}
           xTicks={xTicks}
           formatX={fmtMonth}
-          formatY={(y) => y.toFixed(1)}
+          formatY={(y) => y.toFixed(0)}
           annotations={[
-            { x: 0, y: 6, text: "6 at launch", align: "start", dy: -10 },
-            { x: 10, y: 0.6, text: "0.6 tail", align: "middle", dy: -12 },
-            { x: 24, y: 0.3, text: "0.3 forever", align: "end", dy: -12 },
+            { x: 0, y: 60, text: "60 at launch", align: "start", dy: -10 },
+            { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },
+            { x: 26, y: 3, text: "3 forever", align: "start", dy: -12 },
           ]}
         />
         <p className="mt-2 text-sm text-gray-500">Per-block reward (ZKAS), first 4 years. Hover for any month.</p>
@@ -215,8 +215,8 @@ export default function Analytics() {
       </MainBox>
 
       <FooterHelper icon={Landslide}>
-        The emission and supply curves are deterministic — computed from {BRAND.name}'s coinbase constants (6 ZKAS
-        initial reward, 3-month half-life, 0.6 → 0.3 ZKAS perpetual tail). All other figures are live from a
+        The emission and supply curves are deterministic — computed from {BRAND.name}'s coinbase constants (60 ZKAS
+        initial reward, 3-month half-life, 6 → 3 ZKAS perpetual tail). All other figures are live from a
         {" "}{BRAND.name} node. 1 ZKAS = 100,000,000 sompi.
       </FooterHelper>
     </>
