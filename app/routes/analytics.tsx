@@ -216,7 +216,7 @@ export default function Analytics() {
 
       <FooterHelper icon={Landslide}>
         The emission and supply curves are deterministic — computed from {BRAND.name}'s coinbase constants (60 ZKAS
-        initial reward, 3-month half-life, 6 → 3 ZKAS perpetual tail). All other figures are live from a
+        initial reward, 3-month half-life, 6 → 0.6 ZKAS perpetual tail). All other figures are live from a
         {" "}{BRAND.name} node. 1 ZKAS = 100,000,000 sompi.
       </FooterHelper>
     </>

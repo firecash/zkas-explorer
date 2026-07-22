@@ -376,7 +376,7 @@ const Dashboard = () => {
                 <Trophy className="fill-primary w-5" />
                 <span className="text-black text-lg">Emission curve</span>
               </div>
-              <span className="text-xs text-gray-500">60 → 3 ZKAS, forever</span>
+              <span className="text-xs text-gray-500">60 → 0.6 ZKAS, forever</span>
             </div>
             <AreaChart
               data={EMISSION}

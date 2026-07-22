@@ -3,7 +3,7 @@
 //   * initial reward 60 ZKAS/block at the live 1 BPS,
 //   * smooth decay with a 3-month half-life,
 //   * two-step perpetual tail: 6 ZKAS/block until calendar month 24,
-//     then 3 ZKAS/block forever.
+//     then 0.6 ZKAS/block forever (~18.9M ZKAS/year).
 // Per-second issuance is rate-invariant; these per-block figures are the 1-BPS
 // values. They let the analytics page draw the real emission/supply curves
 // client-side, with no historical time-series needed.
@@ -11,7 +11,7 @@
 export const INITIAL_REWARD = 60; // ZKAS / block @ 1 BPS
 export const HALF_LIFE_MONTHS = 3;
 export const TAIL_INITIAL = 6;
-export const TAIL_FINAL = 3;
+export const TAIL_FINAL = 0.6;
 export const TAIL_STEP_DOWN_MONTH = 24;
 export const BPS = 1;
 export const SECONDS_PER_MONTH = 2_629_800; // 30.4375 days
