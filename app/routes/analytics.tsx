@@ -38,9 +38,9 @@ export function meta() {
 const SOMPI = 100_000_000;
 const toFc = (v?: string | number) => (Number(v) || 0) / SOMPI;
 
-const emission = emissionSeries(48);
-const supply = supplySeries(48);
-const xTicks = [0, 12, 24, 36, 48];
+const emission = emissionSeries(60);
+const supply = supplySeries(60);
+const xTicks = [0, 12, 24, 36, 48, 60];
 const fmtMonth = (x: number) => (x === 0 ? "launch" : `yr ${x / 12}`);
 
 export default function Analytics() {
@@ -51,6 +51,12 @@ export default function Analytics() {
   const { data: shielded, isLoading: shieldedLoading } = useShieldedPool();
 
   const circulating = toFc(coin?.circulatingSupply);
+  // Place the "today" marker on the supply curve at the month whose modelled
+  // cumulative supply is closest to the live circulating figure.
+  const curMonth = supply.reduce(
+    (best, p, i) => (Math.abs(p.y * 1e9 - circulating) < Math.abs(supply[best].y * 1e9 - circulating) ? i : best),
+    0,
+  );
   const tIn = toFc(shielded?.turnstileIn);
   const tOut = toFc(shielded?.turnstileOut);
   const shieldedShare = circulating > 0 ? Math.min(1, (tIn - tOut) / circulating) : 1;
@@ -93,10 +99,10 @@ export default function Analytics() {
             subtext="headers processed"
           />
           <Card
-            title="Block reward"
+            title="Miner reward"
             loading={rewardLoading}
-            value={`${numeral(reward?.blockreward ?? BRAND.initialReward).format("0,0.[000]")} ZKAS`}
-            subtext="per block, minted shielded"
+            value={`${numeral((reward?.blockreward ?? BRAND.initialReward) * 0.95).format("0,0.[000]")} ZKAS`}
+            subtext="95% of gross reward; 5% goes to development"
           />
         </CardContainer>
       </MainBox>
@@ -108,9 +114,10 @@ export default function Analytics() {
           <span className="text-2xl">Emission schedule</span>
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
-          The per-block reward starts at 60 ZKAS and decays with a 3-month half-life. Once it falls to the tail
+          Gross per-block issuance starts at 60 ZKAS (57 ZKAS to the miner after the 5% development allocation)
+          and decays with a 3-month half-life. Once it falls to the tail
           floor (~month 10) a perpetual tail of <b className="text-black">6 ZKAS</b> is paid, stepping down once to
-          a permanent <b className="text-black">3 ZKAS</b> at month 24 — funding proof-of-work security forever.
+          a permanent <b className="text-black">0.6 ZKAS</b> at month 24 — funding proof-of-work security forever.
           There is no fixed supply cap.
         </p>
         <AreaChart
@@ -124,7 +131,7 @@ export default function Analytics() {
           annotations={[
             { x: 0, y: 60, text: "60 at launch", align: "start", dy: -10 },
             { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },
-            { x: 26, y: 3, text: "3 forever", align: "start", dy: -12 },
+            { x: 30, y: 0.6, text: "0.6 forever", align: "start", dy: -10 },
           ]}
         />
         <p className="mt-2 text-sm text-gray-500">Per-block reward (ZKAS), first 4 years. Hover for any month.</p>
@@ -134,23 +141,23 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Coins className="w-6 fill-primary" />
-          <span className="text-2xl">Supply growth</span>
+          <span className="text-2xl">Coins in circulation</span>
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
-          Cumulative ZKAS minted into the shielded pool as the schedule plays out. Steeply disinflationary early,
-          then a low constant tail. Today{" "}
+          Cumulative ZKAS minted into the shielded pool as the schedule plays out — steeply disinflationary early
+          (~0.65B by year 1, ~0.83B by year 2), then a low, near-linear tail. Today{" "}
           <b className="text-black">{numeral(circulating).format("0,0")} ZKAS</b> is in circulation.
         </p>
         <AreaChart
           data={supply}
-          ariaLabel="Cumulative emitted supply in billions of ZKAS over the first four years"
+          ariaLabel="Cumulative coins in circulation in billions of ZKAS over the first four years"
           yTicks={4}
           xTicks={xTicks}
           formatX={fmtMonth}
           formatY={(y) => `${y.toFixed(2)}B`}
-          marker={{ x: 0, y: circulating / 1e9, label: `today: ${numeral(circulating).format("0,0a")}` }}
+          marker={{ x: supply[curMonth].x, y: circulating / 1e9, label: `today · ${numeral(circulating).format("0,0a")}` }}
         />
-        <p className="mt-2 text-sm text-gray-500">Cumulative emitted supply (billions of ZKAS).</p>
+        <p className="mt-2 text-sm text-gray-500">Cumulative coins in circulation (billions of ZKAS).</p>
       </MainBox>
 
       {/* Privacy dashboard */}
@@ -260,7 +267,7 @@ function Countdown({ targetSec, nextAmount }: { targetSec?: number; nextAmount?:
         <Unit v={secs} label="secs" />
       </div>
       <span className="text-gray-500">
-        Block reward halves to <b className="text-black">{nextAmount ?? "—"} ZKAS</b> at the next 3-month interval.
+        Gross issuance halves to <b className="text-black">{nextAmount ?? "—"} ZKAS</b> at the next 3-month interval.
       </span>
     </div>
   );

@@ -9,7 +9,7 @@ import Landslide from "./assets/landslide.svg";
 import Spinner from "./Spinner";
 import SearchBox from "./header/SearchBox";
 import { AreaChart } from "./components/MiniCharts";
-import { BLOCKS_PER_MONTH, emissionSeries, rewardAtMonth } from "./config/emission";
+import { BLOCKS_PER_MONTH, emissionSeries, rewardAtMonth, supplySeries } from "./config/emission";
 import { useBlockdagInfo } from "./hooks/useBlockDagInfo";
 import { useBlockReward } from "./hooks/useBlockReward";
 import { useCoinSupply } from "./hooks/useCoinSupply";
@@ -17,6 +17,7 @@ import { useHalving } from "./hooks/useHalving";
 import { useShieldedPool } from "./hooks/useShieldedPool";
 import { useTransactionsCount } from "./hooks/useTransactionsCount";
 import { useIncomingBlocks } from "./hooks/useIncomingBlocks";
+import { useNetworkPulse } from "./hooks/useNetworkPulse";
 import { BRAND } from "./config/brand";
 import numeral from "numeral";
 import dayjs from "dayjs";
@@ -34,17 +35,21 @@ dayjs.extend(relativeTime);
 const TOTAL_SUPPLY = 5_150_000_000;
 
 // The deterministic emission curve (mirrors the node's coinbase constants).
-const EMISSION = emissionSeries(48);
+const EMISSION_MONTHS = 60; // five years
+const EMISSION = emissionSeries(EMISSION_MONTHS);
+const SUPPLY = supplySeries(EMISSION_MONTHS);
+const EMISSION_TICKS = [0, 12, 24, 36, 48, 60];
+const fmtYear = (x: number) => (x === 0 ? "launch" : `yr ${x / 12}`);
 
 /** Where "today" sits on the emission timeline, inverted from circulating supply. */
 function monthAtSupply(circ: number): number {
   let cum = 0;
-  for (let m = 1; m <= 48; m++) {
+  for (let m = 1; m <= EMISSION_MONTHS; m++) {
     const inc = ((rewardAtMonth(m - 1) + rewardAtMonth(m)) / 2) * BLOCKS_PER_MONTH;
     if (cum + inc >= circ) return m - 1 + (circ - cum) / inc;
     cum += inc;
   }
-  return 48;
+  return EMISSION_MONTHS;
 }
 
 const shortHash = (h?: string) => (h && h.length > 16 ? `${h.slice(0, 8)}…${h.slice(-6)}` : (h ?? "—"));
@@ -204,7 +209,8 @@ const Dashboard = () => {
   const { data: halving, isLoading: isLoadingHalving } = useHalving();
   const { data: transactionsCount, isLoading: isLoadingTxCount } = useTransactionsCount();
   const { data: shielded, isLoading: isLoadingShielded } = useShieldedPool();
-  const { blocks, transactions, avgBlockTime } = useIncomingBlocks();
+  const { blocks, transactions } = useIncomingBlocks();
+  const { data: pulse, isLoading: isLoadingPulse } = useNetworkPulse();
   const { blockSpark, txSpark, sessionBlocks, sessionTxs } = useSessionSpark(blocks);
 
   // Live-ticking totals: supply +60/block, tx count +1/coinbase-tx, blocks +1.
@@ -213,25 +219,21 @@ const Dashboard = () => {
     sessionBlocks,
     BRAND.initialReward,
   );
-  const liveBlocks = useLiveTotal(Number(blockDagInfo?.virtualDaaScore) || 0, sessionBlocks, 1);
-  const liveTxs = useLiveTotal(
-    isLoadingTxCount ? 0 : transactionsCount!.regular + transactionsCount!.coinbase,
-    sessionTxs,
-    1,
-  );
+  const liveBlocks = Number(blockDagInfo?.blockCount) || 0;
+  const liveTxs = isLoadingTxCount ? 0 : transactionsCount!.regular + transactionsCount!.coinbase;
 
   // "+N this session" deltas: remember the first value this tab saw.
   const firstNotesRef = useRef<number | null>(null);
   if (shielded && firstNotesRef.current === null) firstNotesRef.current = shielded.noteCount;
   const notesDelta = shielded && firstNotesRef.current !== null ? shielded.noteCount - firstNotesRef.current : 0;
 
-  const liveBlockTime = avgBlockTime > 0 ? 1 / avgBlockTime : 1;
+  const liveBlockTime = pulse?.averageBlockTime15m ?? 0;
 
   // Chart data: session block flow as (secondsAgo, blocks) points, and where
   // today's supply places us on the emission timeline.
   const pulseData = useMemo(
-    () => blockSpark.map((y, i) => ({ x: -(blockSpark.length - 1 - i) * (SPARK_BIN_MS / 1000), y })),
-    [blockSpark],
+    () => (pulse?.blockBins ?? []).map((y, i, bins) => ({ x: -(bins.length - 1 - i) * 15, y })),
+    [pulse?.blockBins],
   );
   const emissionMonth = useMemo(() => monthAtSupply(liveSupply), [liveSupply]);
 
@@ -284,7 +286,7 @@ const Dashboard = () => {
               >
                 <Box className="fill-primary w-5 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-black">{numeral(b.blueScore).format("0,0")}</div>
+                  <div className="text-black">Block</div>
                   <div className="truncate font-mono text-xs text-gray-500">{shortHash(b.block_hash)}</div>
                 </div>
                 <div className="shrink-0 text-right">
@@ -348,7 +350,7 @@ const Dashboard = () => {
                   <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
                   <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
                 </span>
-                {liveBlockTime.toFixed(2)}s / block
+                {numeral(pulse?.bps15m).format("0.00")} BPS · 15 min
               </span>
             </div>
             {pulseData.length >= 3 ? (
@@ -358,7 +360,7 @@ const Dashboard = () => {
                 yTicks={3}
                 formatX={(x) => (x >= -8 ? "now" : `−${Math.round(-x / 60)}m`)}
                 formatY={(y) => String(Math.round(y))}
-                ariaLabel="Blocks per 15 seconds while this page has been open"
+                ariaLabel="Blocks per 15 seconds over the last 15 minutes"
               />
             ) : (
               <div className="flex h-[220px] animate-pulse items-center justify-center text-sm text-gray-500">
@@ -366,7 +368,8 @@ const Dashboard = () => {
               </div>
             )}
             <p className="mt-1 text-xs text-gray-500">
-              Blocks per 15s while this page is open — drawn from the live feed, updating every second.
+              {numeral(pulse?.blocks15m).format("0,0")} blocks in 15 min ·{" "}
+              {numeral(pulse?.transactions1h).format("0,0")} transactions in the last hour.
             </p>
           </div>
 
@@ -383,20 +386,44 @@ const Dashboard = () => {
               height={220}
               yMax={64}
               yTicks={4}
-              xTicks={[0, 12, 24, 36, 48]}
-              formatX={(x) => (x === 0 ? "launch" : `yr ${x / 12}`)}
+              xTicks={EMISSION_TICKS}
+              formatX={fmtYear}
               formatY={(y) => y.toFixed(0)}
               annotations={[
                 { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },
-                { x: 26, y: 3, text: "3 forever", align: "start", dy: -12 },
+                { x: 30, y: 0.6, text: "0.6 forever", align: "start", dy: -10 },
               ]}
               marker={{ x: emissionMonth, y: rewardAtMonth(emissionMonth), label: "you are here" }}
-              ariaLabel="Per-block reward in ZKAS over the first four years, with today's position marked"
+              ariaLabel="Per-block reward in ZKAS over ten years, with today's position marked"
             />
             <p className="mt-1 text-xs text-gray-500">
               The reward schedule is deterministic — a 3-month half-life down to a perpetual tail. Hover any month.
             </p>
           </div>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-gray-200 p-4 transition-all duration-300 hover:border-primary/40 sm:p-5">
+          <div className="mb-1 flex items-center justify-between">
+            <div className="flex items-center gap-x-2">
+              <Coins className="fill-primary w-5" />
+              <span className="text-black text-lg">Coins in circulation</span>
+            </div>
+            <span className="text-xs text-gray-500">{numeral(liveSupply).format("0,0a")} ZKAS today</span>
+          </div>
+          <AreaChart
+            data={SUPPLY}
+            height={220}
+            yTicks={4}
+            xTicks={EMISSION_TICKS}
+            formatX={fmtYear}
+            formatY={(y) => `${y.toFixed(2)}B`}
+            marker={{ x: emissionMonth, y: liveSupply / 1e9, label: "today" }}
+            ariaLabel="Cumulative coins in circulation in billions of ZKAS over ten years, with today's position marked"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Cumulative supply minted into the shielded pool — steep early (~0.65B by year 1, ~0.83B by year 2), then a
+            low, near-linear tail. Hover any month.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -422,7 +449,7 @@ const Dashboard = () => {
             unit="ZKAS"
             icon={<Coins className="w-5" />}
             loading={isLoadingCoinSupply}
-            delta="+60 ZKAS with every block — watch it climb"
+            delta="+60 ZKAS gross issuance with every block"
           />
           <DashboardBox
             description="Mined"
@@ -439,7 +466,8 @@ const Dashboard = () => {
             format={(n) => n.toFixed(2)}
             unit="s"
             icon={<Time className="w-5" />}
-            delta="measured live from the block feed"
+            loading={isLoadingPulse}
+            delta="trailing 15-minute average"
           />
           <DashboardBox
             description="Shielded notes"
@@ -449,12 +477,12 @@ const Dashboard = () => {
             delta={notesDelta > 0 ? `+${numeral(notesDelta).format("0,0")} while you watched` : "every payment adds encrypted notes"}
           />
           <DashboardBox
-            description="Block reward"
-            value={(blockReward?.blockreward || 0).toFixed(0)}
+            description="Miner reward"
+            value={((blockReward?.blockreward || 0) * 0.95).toFixed(0)}
             unit="ZKAS"
             icon={<Trophy className="w-5" />}
             loading={isLoadingBlockReward}
-            delta="freshly minted, straight into the shielded pool"
+            delta="95% of gross reward · 5% development allocation"
           />
           <DashboardBox
             description="Reward reduction"
