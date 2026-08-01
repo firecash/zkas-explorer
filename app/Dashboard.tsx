@@ -566,6 +566,7 @@ const Dashboard = () => {
         <div className="mt-5 flex justify-end">
           <Link
             to="/analytics"
+            reloadDocument
             className="inline-flex items-center rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary hover:text-white"
           >
             View full analytics ↗
