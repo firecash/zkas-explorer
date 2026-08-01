@@ -186,7 +186,7 @@ export default function Analytics() {
           yTicks={4}
           xTicks={xTicks}
           formatX={() => ""}
-          formatY={(y) => y.toFixed(0)}
+          formatY={(y) => (y < 10 ? y.toFixed(1) : y.toFixed(0))}
           annotations={[
             { x: 0, y: 60, text: "60 at launch", align: "start", dy: -10 },
             { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },

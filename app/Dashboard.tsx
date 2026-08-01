@@ -456,7 +456,7 @@ const Dashboard = () => {
               yTicks={4}
               xTicks={EMISSION_TICKS}
               formatX={() => ""}
-              formatY={(y) => y.toFixed(0)}
+              formatY={(y) => (y < 10 ? y.toFixed(1) : y.toFixed(0))}
               annotations={[
                 { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },
                 { x: 30, y: 0.6, text: "0.6 forever", align: "start", dy: -10 },
