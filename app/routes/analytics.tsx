@@ -43,6 +43,7 @@ const emission = emissionSeries(60);
 const supply = supplySeries(60);
 const xTicks = [0, 12, 24, 36, 48, 60];
 const fmtMonth = (x: number) => (x === 0 ? "launch" : `${x / 12}`);
+const fmtTimeline = (x: number) => (x === 0 ? "launch" : x < 12 ? `${x} mo` : `${x / 12} yr`);
 
 export default function Analytics() {
   const [workWindow, setWorkWindow] = useState("15m");
@@ -211,7 +212,7 @@ export default function Analytics() {
           ariaLabel="Cumulative coins in circulation in billions of ZKAS over the first four years"
           yTicks={4}
           xTicks={xTicks}
-          formatX={() => ""}
+          formatX={fmtTimeline}
           formatY={(y) => `${y.toFixed(2)}B`}
           marker={{ x: supply[curMonth].x, y: circulating / 1e9, label: `today · ${numeral(circulating).format("0,0a")}` }}
         />

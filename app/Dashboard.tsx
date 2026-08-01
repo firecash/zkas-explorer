@@ -41,6 +41,7 @@ const EMISSION = emissionSeries(EMISSION_MONTHS);
 const SUPPLY = supplySeries(EMISSION_MONTHS);
 const EMISSION_TICKS = [0, 12, 24, 36, 48, 60];
 const fmtYear = (x: number) => (x === 0 ? "launch" : `${x / 12}`);
+const fmtTimeline = (x: number) => (x === 0 ? "launch" : x < 12 ? `${x} mo` : `${x / 12} yr`);
 
 /** Where "today" sits on the emission timeline, inverted from circulating supply. */
 function monthAtSupply(circ: number): number {
@@ -482,7 +483,7 @@ const Dashboard = () => {
             height={220}
             yTicks={4}
             xTicks={EMISSION_TICKS}
-            formatX={() => ""}
+            formatX={fmtTimeline}
             formatY={(y) => `${y.toFixed(2)}B`}
             marker={{ x: emissionMonth, y: liveSupply / 1e9, label: "today" }}
             ariaLabel="Cumulative coins in circulation in billions of ZKAS over ten years, with today's position marked"
