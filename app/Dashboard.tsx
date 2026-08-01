@@ -1,33 +1,34 @@
+import Spinner from "./Spinner";
 import AccountBalanceWallet from "./assets/account_balance_wallet.svg";
 import Box from "./assets/box.svg";
 import Coins from "./assets/coins.svg";
-import Shield from "./assets/verified_user.svg";
+import Landslide from "./assets/landslide.svg";
 import Swap from "./assets/swap.svg";
 import Time from "./assets/time.svg";
 import Trophy from "./assets/trophy.svg";
-import Landslide from "./assets/landslide.svg";
-import Spinner from "./Spinner";
-import SearchBox from "./header/SearchBox";
+import Shield from "./assets/verified_user.svg";
 import { AreaChart } from "./components/MiniCharts";
+import { BRAND } from "./config/brand";
 import { BLOCKS_PER_MONTH, emissionSeries, rewardAtMonth, supplySeries } from "./config/emission";
+import SearchBox from "./header/SearchBox";
 import { useBlockdagInfo } from "./hooks/useBlockDagInfo";
 import { useBlockReward } from "./hooks/useBlockReward";
 import { useCoinSupply } from "./hooks/useCoinSupply";
 import { useHalving } from "./hooks/useHalving";
+import { useIncomingBlocks } from "./hooks/useIncomingBlocks";
+import type { Block } from "./hooks/useIncomingBlocks";
+import { useNetworkPulse } from "./hooks/useNetworkPulse";
+import { useNodes } from "./hooks/useNodes";
 import { useShieldedPool } from "./hooks/useShieldedPool";
 import { useTransactionsCount } from "./hooks/useTransactionsCount";
-import { useIncomingBlocks } from "./hooks/useIncomingBlocks";
-import { useNetworkPulse } from "./hooks/useNetworkPulse";
-import { BRAND } from "./config/brand";
-import numeral from "numeral";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import numeral from "numeral";
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Block } from "./hooks/useIncomingBlocks";
 
-// Code-split: three.js only loads for the homepage mesh, never the rest of the app.
-const ShieldedMesh = lazy(() => import("./components/ShieldedMesh"));
+// Code-split: three.js only loads for the homepage globe, never the rest of the app.
+const NodeGlobe = lazy(() => import("./components/NodeGlobe"));
 
 dayjs.extend(relativeTime);
 
@@ -39,7 +40,7 @@ const EMISSION_MONTHS = 60; // five years
 const EMISSION = emissionSeries(EMISSION_MONTHS);
 const SUPPLY = supplySeries(EMISSION_MONTHS);
 const EMISSION_TICKS = [0, 12, 24, 36, 48, 60];
-const fmtYear = (x: number) => (x === 0 ? "launch" : `yr ${x / 12}`);
+const fmtYear = (x: number) => (x === 0 ? "launch" : `${x / 12}`);
 
 /** Where "today" sits on the emission timeline, inverted from circulating supply. */
 function monthAtSupply(circ: number): number {
@@ -161,7 +162,13 @@ const Spark = ({ data, label }: { data: number[]; label: string }) => {
   const line = data.map((d, i) => `${i ? "L" : "M"}${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(" ");
   const area = `${line} L${W},${H} L0,${H} Z`;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="mt-2 h-[30px] w-full" role="img" aria-label={label}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className="mt-2 h-[30px] w-full"
+      role="img"
+      aria-label={label}
+    >
       <defs>
         <linearGradient id={`sp-${gid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.25" />
@@ -169,8 +176,21 @@ const Spark = ({ data, label }: { data: number[]; label: string }) => {
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#sp-${gid})`} />
-      <path d={line} fill="none" stroke="var(--color-primary)" strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-      <circle cx={px(data.length - 1)} cy={py(data[data.length - 1])} r={2.5} fill="var(--color-primary)" className="spark-tip" />
+      <path
+        d={line}
+        fill="none"
+        stroke="var(--color-primary)"
+        strokeWidth={2}
+        vectorEffect="non-scaling-stroke"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={px(data.length - 1)}
+        cy={py(data[data.length - 1])}
+        r={2.5}
+        fill="var(--color-primary)"
+        className="spark-tip"
+      />
     </svg>
   );
 };
@@ -211,6 +231,7 @@ const Dashboard = () => {
   const { data: shielded, isLoading: isLoadingShielded } = useShieldedPool();
   const { blocks, transactions } = useIncomingBlocks();
   const { data: pulse, isLoading: isLoadingPulse } = useNetworkPulse();
+  const { data: nodesInfo } = useNodes();
   const { blockSpark, txSpark, sessionBlocks, sessionTxs } = useSessionSpark(blocks);
 
   // Live-ticking totals: supply +60/block, tx count +1/coinbase-tx, blocks +1.
@@ -237,38 +258,83 @@ const Dashboard = () => {
   );
   const emissionMonth = useMemo(() => monthAtSupply(liveSupply), [liveSupply]);
 
-  const txIds = useMemo(() => transactions.map((t) => t.txId), [transactions]);
-  const meshBlocks = useMemo(
+  // The live feed drives the globe's activity: every real block flashes the
+  // atmosphere, and every real SHIELDED TRANSFER is relayed out of the vantage
+  // node carrying its true Orchard action count.
+  //
+  // Reading the kind off the feed: `/blocks/recent` emits a shielded transfer as
+  // a single output `[actionCount, "shielded"]`, while the coinbase (always tx 0)
+  // emits one entry per minted note. Coinbases are excluded — at 1 BPS there is
+  // one per second and they are already told by the block flash.
+  const globeTxs = useMemo(() => {
+    const out: { id: string; actions: number }[] = [];
+    const seen = new Set<string>();
+    for (const b of blocks) {
+      b.txs.forEach((tx, i) => {
+        if (i === 0 || seen.has(tx.txId)) return; // coinbase, or carried by a parallel block
+        const shielded = tx.outputs.length === 1 && tx.outputs[0][1] === "shielded";
+        if (!shielded) return;
+        seen.add(tx.txId);
+        out.push({ id: tx.txId, actions: Number(tx.outputs[0][0]) || 1 });
+      });
+    }
+    return out;
+  }, [blocks]);
+  const globeBlocks = useMemo(
     () => blocks.map((b) => ({ hash: b.block_hash, blue: Number(b.blueScore) || 0, txs: b.txCount ?? 0 })),
     [blocks],
   );
 
+  const globeNodes = useMemo(
+    () => (nodesInfo?.nodes ?? []).map((n) => ({ id: n.id, lat: n.lat, lon: n.lon, self: n.self, country: n.country })),
+    [nodesInfo?.nodes],
+  );
+  const globeLabels = useMemo(
+    () =>
+      (nodesInfo?.countries ?? []).map((c) => ({
+        code: c.code,
+        name: c.name,
+        count: c.count,
+        lat: c.lat,
+        lon: c.lon,
+      })),
+    [nodesInfo?.countries],
+  );
+
   return (
     <>
-      {/* Hero — the shielded mesh. Every flash is a real transaction from the
-          live feed; every cage flash a real block. On mobile the mesh gets its
-          own compact band ABOVE the copy (smaller model, nothing overlaps the
-          text); on desktop it gets the right half, drag-to-spin. */}
+      {/* Hero — the live network globe, the explorer's single 3D model. Each
+          marker is a node this chain is actually relaying through; tapping one
+          opens it on the full map. On mobile the globe gets its own band ABOVE
+          the copy (smaller model, nothing overlaps the text); on desktop it
+          takes the right half, drag-to-spin. */}
       <div className="flex flex-col overflow-hidden rounded-4xl bg-white lg:flex-row">
-        <div className="relative h-[200px] w-full max-w-full cursor-grab touch-pan-y overflow-hidden sm:h-[250px] lg:order-2 lg:h-[420px] lg:w-1/2">
+        <div className="relative h-[240px] w-full max-w-full overflow-hidden sm:h-[300px] lg:order-2 lg:h-[440px] lg:w-1/2">
           <Suspense fallback={null}>
-            <ShieldedMesh txIds={txIds} blocks={meshBlocks} onNavigate={navigate} />
+            <NodeGlobe
+              nodes={globeNodes}
+              labels={globeLabels}
+              txs={globeTxs}
+              blocks={globeBlocks}
+              onNavigate={navigate}
+              onSelect={(id) => navigate(`/map?node=${id}`)}
+            />
           </Suspense>
+
+          {/* The way into the map sits ON the globe, at every breakpoint — it
+              belongs to the thing it opens, not to the search box. z-20 clears
+              the tag overlay (z-15) so the tap always lands on the button. */}
+          <Link
+            to="/map"
+            className="border-primary/40 bg-gray-25/95 text-primary hover:border-primary hover:bg-primary/15 absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border px-5 py-2 text-sm whitespace-nowrap shadow-sm transition-colors"
+          >
+            View full map →
+          </Link>
         </div>
         <div className="flex w-full flex-col justify-center gap-y-1 px-4 pt-1 pb-8 sm:px-8 lg:w-1/2 lg:py-12 lg:ps-16 xl:ps-24">
           <span className="text-2xl lg:text-4xl">ZKas Explorer</span>
           <span className="mb-2 text-gray-500">Live blocks &amp; private transactions on the shielded BlockDAG.</span>
           <SearchBox value={search} onChange={setSearch} className="w-full py-3" />
-          <div className="mt-3 flex items-center gap-x-2 text-xs text-gray-500">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
-              <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
-            </span>
-            <span>
-              Live chain data — every hash is a real transaction, every ⬢ a real block. Tap one.{" "}
-              <span className="text-primary">All you'll ever see: that it happened. Never who, or how much</span>.
-            </span>
-          </div>
         </div>
       </div>
 
@@ -332,7 +398,8 @@ const Dashboard = () => {
         <div className="mb-5 flex items-baseline justify-between">
           <span className="text-black text-2xl md:text-3xl">{BRAND.name} by the numbers</span>
           <span className="hidden text-xs text-gray-500 sm:block">
-            live · {sessionBlocks > 0 ? `${numeral(sessionBlocks).format("0,0")} blocks watched this session` : "listening…"}
+            live ·{" "}
+            {sessionBlocks > 0 ? `${numeral(sessionBlocks).format("0,0")} blocks watched this session` : "listening…"}
           </span>
         </div>
 
@@ -474,7 +541,11 @@ const Dashboard = () => {
             numeric={shielded?.noteCount ?? 0}
             icon={<AccountBalanceWallet className="w-5" />}
             loading={isLoadingShielded}
-            delta={notesDelta > 0 ? `+${numeral(notesDelta).format("0,0")} while you watched` : "every payment adds encrypted notes"}
+            delta={
+              notesDelta > 0
+                ? `+${numeral(notesDelta).format("0,0")} while you watched`
+                : "every payment adds encrypted notes"
+            }
           />
           <DashboardBox
             description="Miner reward"

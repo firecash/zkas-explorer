@@ -19,6 +19,7 @@ import { useCoinSupply } from "../hooks/useCoinSupply";
 import { useBlockReward } from "../hooks/useBlockReward";
 import { useHalving } from "../hooks/useHalving";
 import { useShieldedPool } from "../hooks/useShieldedPool";
+import { useNetworkPulse } from "../hooks/useNetworkPulse";
 
 export function meta() {
   return [
@@ -41,14 +42,16 @@ const toFc = (v?: string | number) => (Number(v) || 0) / SOMPI;
 const emission = emissionSeries(60);
 const supply = supplySeries(60);
 const xTicks = [0, 12, 24, 36, 48, 60];
-const fmtMonth = (x: number) => (x === 0 ? "launch" : `yr ${x / 12}`);
+const fmtMonth = (x: number) => (x === 0 ? "launch" : `${x / 12}`);
 
 export default function Analytics() {
+  const [workWindow, setWorkWindow] = useState("15m");
   const { data: dag, isLoading: dagLoading } = useBlockdagInfo();
   const { data: coin, isLoading: coinLoading } = useCoinSupply();
   const { data: reward, isLoading: rewardLoading } = useBlockReward();
   const { data: halving } = useHalving();
   const { data: shielded, isLoading: shieldedLoading } = useShieldedPool();
+  const { data: pulse, isLoading: pulseLoading } = useNetworkPulse(workWindow);
 
   const circulating = toFc(coin?.circulatingSupply);
   // Place the "today" marker on the supply curve at the month whose modelled
@@ -105,6 +108,61 @@ export default function Analytics() {
             subtext="95% of gross reward; 5% goes to development"
           />
         </CardContainer>
+      </MainBox>
+
+      {/* Live work chart */}
+      <MainBox>
+        <div className="mb-1 flex items-center gap-x-3">
+          <AnalyticsIcon className="w-6 fill-primary" />
+          <span className="text-2xl">Network work</span>
+        </div>
+        <p className="mb-5 max-w-3xl text-gray-500">
+          Difficulty and estimated network hashrate over the selected window, sampled from
+          accepted blocks. Hashrate is derived from consensus difficulty, not pool-reported miner claims.
+        </p>
+        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Chart time range">
+          {[['15m', '15 min'], ['1h', '1 hour'], ['12h', '12 hours'], ['24h', '24 hours'], ['7d', '7 days'], ['30d', '30 days']].map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setWorkWindow(value)}
+              className={`rounded-full border px-4 py-2 text-sm transition ${workWindow === value ? 'border-primary bg-primary text-white' : 'border-gray-200 text-gray-500 hover:border-primary hover:text-primary'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {pulseLoading && !pulse ? (
+          <div className="h-72 animate-pulse rounded-2xl bg-gray-50" aria-label="Loading network work chart" />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-gray-100 p-4">
+              <div className="mb-2 flex items-baseline justify-between">
+                <span className="text-sm text-gray-500">Estimated hashrate</span>
+                <span className="font-medium text-black">
+                  {numeral(lastPositive(pulse?.workHashrateBins, (dag?.difficulty ?? 0) * 2) / 1e12).format("0.00")} TH/s
+                </span>
+              </div>
+              <AreaChart
+                data={series(pulse?.workHashrateBins, (dag?.difficulty ?? 0) * 2).map((y, x) => ({ x, y: y / 1e12 }))}
+                ariaLabel="Estimated network hashrate over the last 15 minutes"
+                formatX={(x) => formatAgo(x, pulse?.workBinSeconds ?? 15, pulse?.workHashrateBins?.length ?? 60)}
+                formatY={(y) => `${numeral(y).format("0.0")}T`}
+              />
+            </div>
+            <div className="rounded-2xl border border-gray-100 p-4">
+              <div className="mb-2 flex items-baseline justify-between">
+                <span className="text-sm text-gray-500">Network difficulty</span>
+                <span className="font-medium text-black">
+                  {numeral(lastPositive(pulse?.workDifficultyBins, dag?.difficulty ?? 0)).format("0.00a")}
+                </span>
+              </div>
+              <AreaChart
+                data={series(pulse?.workDifficultyBins, dag?.difficulty ?? 0).map((y, x) => ({ x, y }))}
+                ariaLabel="Network difficulty over the last 15 minutes"
+                formatX={(x) => formatAgo(x, pulse?.workBinSeconds ?? 15, pulse?.workDifficultyBins?.length ?? 60)}
+                formatY={(y) => numeral(y).format("0.0a")}
+              />
+            </div>
+          </div>
+        )}
+        <p className="mt-2 text-sm text-gray-500">Newest point at right. Longer windows become coarser automatically.</p>
       </MainBox>
 
       {/* Emission schedule */}
@@ -228,6 +286,26 @@ export default function Analytics() {
       </FooterHelper>
     </>
   );
+}
+
+function series(values: number[] | undefined, fallback: number) {
+  const out = values?.length ? values : Array.from({ length: 60 }, () => fallback);
+  let previous = fallback;
+  return out.map((v) => {
+    if (Number.isFinite(v) && v > 0) previous = v;
+    return previous;
+  });
+}
+
+function lastPositive(values: number[] | undefined, fallback: number) {
+  return values?.slice().reverse().find((value) => Number.isFinite(value) && value > 0) ?? fallback;
+}
+
+function formatAgo(x: number, binSeconds = 15, pointCount = 60) {
+  const seconds = Math.max(0, (pointCount - 1 - x) * binSeconds);
+  if (seconds === 0) return "now";
+  if (seconds >= 3600) return `-${Math.round(seconds / 3600)}h`;
+  return `-${Math.max(1, Math.round(seconds / 60))}m`;
 }
 
 function pad(n: number) {
