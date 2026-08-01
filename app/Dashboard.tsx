@@ -563,6 +563,14 @@ const Dashboard = () => {
             delta="emission steps down on schedule"
           />
         </div>
+        <div className="mt-5 flex justify-end">
+          <Link
+            to="/analytics"
+            className="inline-flex items-center rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary hover:text-white"
+          >
+            View full analytics ↗
+          </Link>
+        </div>
       </div>
 
       {/* Compact shielded pool */}
