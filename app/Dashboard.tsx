@@ -454,7 +454,7 @@ const Dashboard = () => {
               yMax={64}
               yTicks={4}
               xTicks={EMISSION_TICKS}
-              formatX={fmtYear}
+              formatX={() => ""}
               formatY={(y) => y.toFixed(0)}
               annotations={[
                 { x: 10, y: 6, text: "6 tail", align: "middle", dy: -12 },
@@ -482,7 +482,7 @@ const Dashboard = () => {
             height={220}
             yTicks={4}
             xTicks={EMISSION_TICKS}
-            formatX={fmtYear}
+            formatX={() => ""}
             formatY={(y) => `${y.toFixed(2)}B`}
             marker={{ x: emissionMonth, y: liveSupply / 1e9, label: "today" }}
             ariaLabel="Cumulative coins in circulation in billions of ZKAS over ten years, with today's position marked"

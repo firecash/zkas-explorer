@@ -184,7 +184,7 @@ export default function Analytics() {
           yMax={64}
           yTicks={4}
           xTicks={xTicks}
-          formatX={fmtMonth}
+          formatX={() => ""}
           formatY={(y) => y.toFixed(0)}
           annotations={[
             { x: 0, y: 60, text: "60 at launch", align: "start", dy: -10 },
@@ -211,7 +211,7 @@ export default function Analytics() {
           ariaLabel="Cumulative coins in circulation in billions of ZKAS over the first four years"
           yTicks={4}
           xTicks={xTicks}
-          formatX={fmtMonth}
+          formatX={() => ""}
           formatY={(y) => `${y.toFixed(2)}B`}
           marker={{ x: supply[curMonth].x, y: circulating / 1e9, label: `today · ${numeral(circulating).format("0,0a")}` }}
         />
