@@ -32,8 +32,19 @@ const NodeGlobe = lazy(() => import("./components/NodeGlobe"));
 
 dayjs.extend(relativeTime);
 
-// Terminal ZKas supply (~5.15B ZKAS), used only for the "mined %" gauge.
-const TOTAL_SUPPLY = 5_150_000_000;
+// ZKas has NO maximum supply: emission decays to a perpetual tail and never stops
+// (the API says so itself — `maxSupply: null`, `emissionModel: "perpetual-tail"`).
+// So "mined %" has no terminal denominator, and the 5,150,000,000 that used to sit
+// here was Kaspa's cap, inherited with the fork and never true of this chain. It
+// made the gauge read 1.49% where the real answer was 8.66%.
+//
+// The gauge is measured against the FIRST FIVE YEARS of issuance instead — a real
+// milestone with a real number, integrated from the same schedule the chain mines
+// (`config/emission`), so it cannot drift from consensus the way a copied constant
+// did. Labelled as such on the tile, because a percentage with an unstated
+// denominator is how the old number misled in the first place.
+const EMISSION_HORIZON_YEARS = 5;
+const FIVE_YEAR_EMISSION = supplySeries(EMISSION_HORIZON_YEARS * 12).at(-1)!.y * 1e9;
 
 // The deterministic emission curve (mirrors the node's coinbase constants).
 const EMISSION_MONTHS = 60; // five years
@@ -235,11 +246,17 @@ const Dashboard = () => {
   const { data: nodesInfo } = useNodes();
   const { blockSpark, txSpark, sessionBlocks, sessionTxs } = useSessionSpark(blocks);
 
-  // Live-ticking totals: supply +60/block, tx count +1/coinbase-tx, blocks +1.
+  // What a block actually pays right now. The reward decays ~5.6% every ~7.6 days,
+  // so the launch figure is only correct on day one — using it made the ticker climb
+  // faster than the chain issues and the caption claim an amount no block has paid
+  // for months. `BRAND.initialReward` stays as the pre-load fallback only.
+  const rewardPerBlock = blockReward?.blockreward ?? shielded?.emissionPerBlock ?? BRAND.initialReward;
+
+  // Live-ticking totals: supply +reward/block, tx count +1/coinbase-tx, blocks +1.
   const liveSupply = useLiveTotal(
     (Number(coinSupply?.circulatingSupply) || 0) / 1_0000_0000,
     sessionBlocks,
-    BRAND.initialReward,
+    rewardPerBlock,
   );
   const liveBlocks = Number(blockDagInfo?.blockCount) || 0;
   const liveTxs = isLoadingTxCount ? 0 : transactionsCount!.regular + transactionsCount!.coinbase;
@@ -517,16 +534,17 @@ const Dashboard = () => {
             unit="ZKAS"
             icon={<Coins className="w-5" />}
             loading={isLoadingCoinSupply}
-            delta="+60 ZKAS gross issuance with every block"
+            delta={`+${numeral(rewardPerBlock).format("0,0.[00000000]")} ZKAS gross issuance with every block`}
           />
           <DashboardBox
-            description="Mined"
-            numeric={(liveSupply / TOTAL_SUPPLY) * 100}
+            description="Mined of first 5 years"
+            numeric={(liveSupply / FIVE_YEAR_EMISSION) * 100}
             format={(n) => n.toFixed(2)}
             unit="%"
             icon={<Landslide className="w-5" />}
             loading={isLoadingCoinSupply}
-            ring={liveSupply / TOTAL_SUPPLY}
+            ring={liveSupply / FIVE_YEAR_EMISSION}
+            delta="ZKAS has no maximum supply — emission continues on a perpetual tail"
           />
           <DashboardBox
             description="Average block time"
