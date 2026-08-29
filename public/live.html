@@ -11,10 +11,10 @@
 <style>
   /* Matches explorer.zkas.info tokens (app.css): dark-only, teal primary, ember alert. */
   :root{
-    --bg:#0b0b0f; --surface:#16161d; --surface-2:#1c1c25; --grid:#24242e;
+    --bg:#0b0b0f; --surface:#16161d; --grid:#24242e;
     --ink:#f6f6f8; --ink-2:#c9c9d4; --muted:#9090a0; --muted-2:#5d5d6c;
     --teal:#17d6be; --teal-bright:#7ef7e4; --teal-deep:#0a6e63;
-    --ember:#ff6b35; --alert:#f59e3c; --success:#35c46a;
+    --ember:#ff6b35; --alert:#f59e3c;
     --font:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;
     --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
@@ -24,7 +24,6 @@
   .hud{position:fixed;pointer-events:none;z-index:2}
   .hud *{pointer-events:auto}
 
-  /* top-left: identity + status */
   .brand{top:18px;left:22px;display:flex;align-items:center;gap:12px}
   .brand h1{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
   .brand h1 small{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
@@ -34,16 +33,14 @@
   .pill.sim{color:var(--alert);border-color:rgba(245,158,60,.4)}
   @keyframes blink{50%{opacity:.35}}
 
-  /* left column: the numbers */
   .stats{top:66px;left:22px;display:grid;gap:10px;width:214px}   /* top is re-measured in JS */
-  .stat{background:rgba(22,22,29,.82);border:1px solid var(--grid);border-radius:14px;padding:10px 13px;backdrop-filter:blur(6px)}
+  .stat{background:rgba(22,22,29,.93);border:1px solid var(--grid);border-radius:14px;padding:10px 13px;backdrop-filter:blur(6px)}
   .stat .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
   .stat .v{font:500 22px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:3px;color:var(--ink)}
   .stat .v.t{color:var(--teal)}
   .stat .s{font-size:11.5px;color:var(--muted);margin-top:2px}
   .stat .delta{color:var(--teal-bright);font:500 11px var(--mono)}
 
-  /* right column: what am I looking at — sits over the calm pool, clear of the arrival lane */
   .guide{bottom:52px;right:22px;width:280px;background:rgba(22,22,29,.86);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
   .guide h2{margin:0 0 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
   .guide ol{margin:0;padding:0;list-style:none;display:grid;gap:9px}
@@ -53,16 +50,13 @@
   .guide .foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--grid);font-size:11.5px;color:var(--muted)}
   .guide .foot a{color:var(--teal);text-decoration:none}
   .guide .foot a:hover{text-decoration:underline}
-  .guide .toggle{display:none}
 
-  /* tooltip */
   .tip{position:fixed;z-index:3;pointer-events:none;background:rgba(11,11,15,.94);border:1px solid var(--grid);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--ink-2);max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
   .tip.on{opacity:1;transform:none}
   .tip .h{color:var(--ink);font-weight:500;margin-bottom:3px}
   .tip .m{font:11.5px var(--mono);color:var(--muted)}
   .tip .no{color:var(--teal);margin-top:4px}
 
-  /* bottom: caption for the moving parts */
   .caption{bottom:16px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:11.5px;color:var(--muted)}
   .caption .leg{display:flex;gap:14px;flex-wrap:wrap}
   .caption .leg span{display:inline-flex;align-items:center;gap:6px}
@@ -70,11 +64,7 @@
   .caption .src{font:11px var(--mono);white-space:nowrap}
   .caption .src a{color:var(--muted)}
 
-  @media (max-width:900px){
-    .guide{display:none}
-    .stats{width:170px}
-    .stat .v{font-size:18px}
-  }
+  @media (max-width:900px){ .guide{display:none} .stats{width:170px} .stat .v{font-size:18px} }
   @media (max-width:600px){
     .brand{flex-wrap:wrap;gap:8px;right:22px}
     .brand h1 small{display:block;margin:2px 0 0}
@@ -109,11 +99,11 @@
 <div class="hud guide" id="guide">
   <h2>What am I looking at?</h2>
   <ol>
-    <li><canvas data-icon="crate"></canvas><div><b>Crates are blocks.</b> One arrives every second and rolls left; the lines point at the blocks it builds on.</div></li>
-    <li><canvas data-icon="lanes"></canvas><div><b>Crates stacked are DAG siblings</b> — found in the same second, all kept. An orange outline means a reorg dropped it.</div></li>
+    <li><canvas data-icon="crate"></canvas><div><b>Crates are blocks.</b> One arrives every second and rolls left; the threads point at the blocks it builds on.</div></li>
+    <li><canvas data-icon="lanes"></canvas><div><b>Stacked crates are DAG siblings</b> — found in the same second, all kept. An orange outline means a reorg dropped it.</div></li>
     <li><canvas data-icon="note"></canvas><div><b>Capsules are sealed notes.</b> Each block mints its reward straight into sealed form.</div></li>
     <li><canvas data-icon="env"></canvas><div><b>Envelopes are people's transfers.</b> You can see one happened and how many parts it has. Nothing else.</div></li>
-    <li><canvas data-icon="pool"></canvas><div><b>The pool is the shielded pool.</b> Notes drop in and stay. Bubbles rising = a note somewhere was spent.</div></li>
+    <li><canvas data-icon="pool"></canvas><div><b>The pool is the shielded pool.</b> Notes sink in and stay. Bubbles rising = a note somewhere was spent.</div></li>
   </ol>
   <div class="foot">This page is deliberately blind: no addresses, no amounts, no balances exist to show. <a href="https://explorer.zkas.info" target="_blank" rel="noopener">Open the explorer →</a></div>
 </div>
@@ -133,36 +123,41 @@ const API = qs.get('api') || (location.hostname.endsWith('zkas.info') ? '/api' :
 const FORCE_SIM = qs.has('sim');
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SOMPI = 1e8;
-const SPEED = 46;             // px per second the conveyor moves
-const CRATE = 30;             // crate size
-const LANE_GAP = 40;          // vertical gap between DAG siblings
+const SPEED = 62;             // px per second the conveyor moves
+const CRATE = 44;             // crate face size
+const DEPTH = 11;             // isometric depth
+const LANE_GAP = 60;          // vertical gap between DAG siblings
 const C = {
   bg:'#0b0b0f', surface:'#16161d', grid:'#24242e', ink:'#f6f6f8', muted:'#9090a0', muted2:'#5d5d6c',
   teal:'#17d6be', tealBright:'#7ef7e4', tealDeep:'#0a6e63', ember:'#ff6b35', alert:'#f59e3c'
 };
+const FONT = () => getComputedStyle(document.body).getPropertyValue('--font');
+const MONO = () => getComputedStyle(document.body).getPropertyValue('--mono');
 
 // ───────────────────────── state ─────────────────────────
 const S = {
-  sim:false, blocks:[], byHash:new Map(), notes:[], bubbles:[], ripples:[], labels:[],
-  poolLevel:0, poolTarget:0, noteCount:null, nullCount:null, notesBase:null, nullBase:null,
-  turnstile:null, bps:null, miners:new Map(), minerOrder:[], nakamoto:null, nodes:null,
-  latency:null, lastPoll:0, hover:null, seenFirstPoll:false
+  sim:false, blocks:[], byHash:new Map(), known:new Set(), notes:[], bubbles:[], ripples:[], labels:[], drops:[], field:[],
+  noteCount:null, nullCount:null, notesBase:null, nullBase:null, noteShown:0,
+  turnstile:null, bps:null, nakamoto:null, minersN:null, nodes:null, countries:null, reorgsPerHour:null,
+  latency:null, hover:null, seenFirstPoll:false
 };
 const cv = document.getElementById('stage'), cx = cv.getContext('2d');
-let W=0,H=0,DPR=1, DROP_X=0, POOL_Y=0, LANE_Y=0;
+let W=0,H=0,DPR=1, DROP_X=0, POOL_Y=0, LANE_Y=0, NARROW=false, MAX_LANE=2;
 function resize(){
   DPR = Math.min(devicePixelRatio||1, 2);
   W = innerWidth; H = innerHeight;
   cv.width = W*DPR; cv.height = H*DPR; cx.setTransform(DPR,0,0,DPR,0,0);
-  // Keep the HUD and the animation out of each other's way: stats hang under the brand,
-  // the arrival lane starts below whatever the stats occupy (matters on phones).
   const brand = document.querySelector('.brand'), stats = document.getElementById('stats');
   stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
   const statsBottom = stats.getBoundingClientRect().bottom;
-  const narrow = W < 600;
-  LANE_Y = narrow ? statsBottom + 44 : Math.max(H*0.31, brand.getBoundingClientRect().bottom + 90);
-  POOL_Y = Math.max(H*0.60, LANE_Y + Math.min(220, H*0.28));
-  DROP_X = narrow ? W*0.42 : Math.max(300, W*0.36);
+  NARROW = W < 600;
+  MAX_LANE = NARROW ? 1 : 2;
+  // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
+  const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
+  LANE_Y = NARROW ? statsBottom + head : Math.max(H*0.34, brand.getBoundingClientRect().bottom + head);
+  POOL_Y = Math.max(H*0.58, LANE_Y + Math.min(210, H*0.26));
+  DROP_X = NARROW ? W*0.42 : Math.max(300, W*0.36);
+  buildField();
 }
 addEventListener('resize', resize); resize();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
@@ -175,32 +170,42 @@ const lerp = (a,b,t) => a+(b-a)*t;
 const hexA = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
 function el(id){ return document.getElementById(id); }
 function setStatus(kind, text){ const p=el('status'); p.className='pill '+kind; p.textContent=text; }
-
-// Everything on screen comes from cheap aggregate feeds the explorer already polls
-// (/blocks/recent, /info/*). Per-block detail calls are deliberately NOT made: one
-// viewer doing that at 1 block/s is enough to 502 the public API.
 function renderLegend(){
   el('legend').innerHTML =
     `<span><i style="background:${hexA(C.teal,.85)}"></i>block</span>` +
-    `<span><i style="background:${hexA(C.teal,.85)};box-shadow:14px 0 0 ${hexA(C.teal,.85)}"></i><span style="margin-left:14px">siblings (same DAA tick)</span></span>` +
+    `<span><i style="background:${hexA(C.teal,.85)};box-shadow:0 -7px 0 -1px ${hexA(C.teal,.5)}"></i>siblings (same DAA tick)</span>` +
     `<span><i style="background:transparent;border:1px solid ${C.ember};border-radius:3px"></i>orphaned by a reorg</span>` +
-    `<span><i style="background:${C.tealBright};border-radius:5px"></i>sealed note</span>`;
+    `<span><i style="background:${C.tealBright};border-radius:5px"></i>sealed note</span>` +
+    `<span><i style="background:transparent;border:1px solid ${C.tealBright};border-radius:50%"></i>spend</span>`;
 }
 
-// ───────────────────────── block intake ─────────────────────────
-function addBlock(b){
-  if (S.byHash.has(b.hash)) return;
-  const t = now();
-  // DAG lane: siblings share a daaScore; stack them.
-  const sibs = S.blocks.filter(o => o.daa===b.daa && t-o.born<6);
-  b.lane = sibs.length; b.born = t;
-  b.x = W + CRATE; b.dropped = false;
-  b.color = C.teal;
-  S.blocks.push(b); S.byHash.set(b.hash, b);
-  if (S.blocks.length > 80) { const old = S.blocks.shift(); S.byHash.delete(old.hash); }
+// The standing contents of the pool: a field of sealed capsules, denser with depth.
+function buildField(){
+  const n = REDUCED ? 300 : Math.max(300, Math.min(1600, Math.round(W*(H-POOL_Y)/700)));
+  const rnd = mulberry(7);
+  S.field = [];
+  for (let i=0;i<n;i++){
+    const d = Math.pow(rnd(), 0.6);                       // bias toward the bottom
+    S.field.push({ x: rnd()*W, y: POOL_Y + 26 + d*(H-POOL_Y-30), d, s: 0.55+rnd()*0.7, ph: rnd()*6.283, sp: 0.15+rnd()*0.35 });
+  }
 }
-// "Parents" for drawing: the blocks of the previous DAA tick on screen. In a 1-BPS DAG that
-// is what the parent set almost always is; the tooltip says "usually" for that reason.
+function mulberry(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// ───────────────────────── block intake ─────────────────────────
+// Everything on screen comes from cheap aggregate feeds the explorer already polls
+// (/blocks/recent, /info/*). Per-block detail calls are deliberately NOT made: one
+// viewer doing that at 1 block/s is enough to 502 the public API.
+function addBlock(b, born){
+  if (S.byHash.has(b.hash)) return;
+  b.born = born ?? now();
+  // Lane = stack over whatever arrived in the same ~0.8 s so crates never overlap;
+  // the tooltip's "siblings" wording is based on DAA score, not on this.
+  const near = S.blocks.filter(o => Math.abs(o.born - b.born) < 0.8);
+  let lane = 0; while (near.some(o => o.lane === lane) && lane < MAX_LANE) lane++;
+  b.lane = lane; b.x = W + CRATE; b.dropped = false;
+  S.blocks.push(b); S.byHash.set(b.hash, b);
+  if (S.blocks.length > 90) { const old = S.blocks.shift(); S.byHash.delete(old.hash); }
+}
 function prevTick(b){
   let best=null;
   for (const o of S.blocks) if (o.daa < b.daa && (best==null || o.daa > best)) best = o.daa;
@@ -210,12 +215,11 @@ function normaliseRecent(list){
   // /blocks/recent, newest first. txs[0] = coinbase; its outputs = one entry per minted note.
   return list.slice().reverse().map(r => {
     const cb = r.txs && r.txs[0];
-    const mintNotes = cb ? cb.outputs.filter(o=>o[1]==='shielded').length : 1;
+    const mintNotes = cb ? Math.max(1, cb.outputs.filter(o=>o[1]==='shielded').length) : 1;
     const transfers = (r.txs||[]).slice(1).filter(t => t.outputs.length===1 && t.outputs[0][1]==='shielded')
       .map(t => ({ id:t.txId, actions: +t.outputs[0][0] || 2 }));
     const others = Math.max(0, (r.txCount||1) - 1 - transfers.length);
-    return { hash:r.block_hash, daa:+r.daaScore, blue:+r.blueScore, ts:+r.timestamp, txCount:r.txCount,
-             mintNotes, transfers, others };
+    return { hash:r.block_hash, daa:+r.daaScore, blue:+r.blueScore, ts:+r.timestamp, txCount:r.txCount, mintNotes, transfers, others };
   });
 }
 
@@ -229,17 +233,27 @@ async function pollBlocks(){
     const list = await r.json();
     S.latency = Math.round(performance.now()-t0); el('lat').textContent = S.latency+' ms';
     const fresh = normaliseRecent(list);
+    if (S.sim) stopSim();            // the API came back: drop the simulation and re-seed from real blocks
+    // The feed is a 200-block window; remember every hash we've been shown so only
+    // genuinely new blocks get animated in (the display itself keeps ~90).
+    const unseen = fresh.filter(b => !S.known.has(b.hash));
+    fresh.forEach(b => S.known.add(b.hash));
+    if (S.known.size > 3000) S.known = new Set(fresh.map(b=>b.hash));
     if (!S.seenFirstPoll) {
-      // Seed the conveyor with the last ~14 s so the screen isn't empty on load.
-      const seed = fresh.slice(-14);
-      seed.forEach((b,i) => { addBlock(b); b.born = now() - (seed.length-1-i); b.x = W + CRATE - (seed.length-1-i)*SPEED; });
+      // Seed the conveyor with the last ~18 s so the screen isn't empty on load.
+      const seed = fresh.slice(-18);
+      const t0 = now(), maxTs = Math.max(...seed.map(b=>b.ts));
+      seed.forEach(b => addBlock(b, t0 - Math.min(20, Math.max(0, (maxTs - b.ts)/1000))));
       S.seenFirstPoll = true;
-    } else {
-      fresh.forEach(b => addBlock(b));
+    } else if (unseen.length) {
+      // Space same-poll arrivals by their real timestamps instead of dumping them on one x.
+      const t0 = now(), maxTs = Math.max(...unseen.map(b=>b.ts));
+      unseen.forEach(b => addBlock(b, t0 - Math.min(3, Math.max(0, (maxTs - b.ts)/1000))));
     }
     failures = 0; setStatus('live','live · mainnet');
   }catch(e){
-    if (++failures >= 3 && !S.sim) startSim('no route to the API from here');
+    // Six misses in a row (~6 s) before giving up on live data; a single blip just skips a tick.
+    if (++failures >= 6 && !S.sim) startSim('no route to the API from here');
   }
 }
 async function pollShielded(){
@@ -249,10 +263,9 @@ async function pollShielded(){
   }catch(e){}
 }
 function onShielded(notes, nulls, held){
-  if (S.notesBase==null){ S.notesBase=notes; S.nullBase=nulls; }
-  if (S.nullCount!=null && nulls > S.nullCount) spawnBubbles(Math.min(nulls - S.nullCount, 12));
+  if (S.notesBase==null){ S.notesBase=notes; S.nullBase=nulls; S.noteShown = notes; }
+  if (S.nullCount!=null && nulls > S.nullCount) spawnBubbles(Math.min(nulls - S.nullCount, 14));
   S.noteCount = notes; S.nullCount = nulls; S.turnstile = held;
-  S.poolTarget = 1;
   el('notes').textContent = fmt(notes); el('spent').textContent = fmt(nulls);
   el('notes-d').textContent = notes-S.notesBase>0 ? '+'+fmt(notes-S.notesBase) : '';
   el('spent-d').textContent = nulls-S.nullBase>0 ? '+'+fmt(nulls-S.nullBase) : '';
@@ -300,10 +313,9 @@ function startSim(reason){
     const sibs = Math.random()<0.18 ? 2 : 1;
     simDaa++; simBlue += sibs;
     for (let k=0;k<sibs;k++){
-      const transfers = Math.random()<0.06 ? [{id:'sim'+Math.random().toString(16).slice(2,10), actions: 2+Math.floor(Math.random()*3)}] : [];
+      const transfers = Math.random()<0.07 ? [{id:'sim'+Math.random().toString(16).slice(2,10), actions: 2+Math.floor(Math.random()*3)}] : [];
       const mintNotes = 1+Math.floor(Math.random()*3);
-      const b = { hash:'sim'+Math.random().toString(16).slice(2,18), daa:simDaa, blue:simBlue, ts:Date.now(), txCount:1+transfers.length,
-                  mintNotes, transfers, others:0 };
+      const b = { hash:'sim'+Math.random().toString(16).slice(2,18), daa:simDaa, blue:simBlue, ts:Date.now(), txCount:1+transfers.length, mintNotes, transfers, others:0 };
       addBlock(b);
       if (Math.random()<0.03) { b.red = true; b.redDepth = 1; }
       simNotes += mintNotes + transfers.reduce((a,t)=>a+t.actions,0);
@@ -316,153 +328,246 @@ function startSim(reason){
   S.bps = 0.99; el('bps').textContent='0.99'; el('bps-s').textContent='890 blocks in 15 min · simulated';
   S.nakamoto = 2; S.minersN = 27; S.nodes = 38; S.countries = 14; updateNet();
 }
+function stopSim(){
+  clearInterval(simTimer); simTimer = null; S.sim = false; failures = 0;
+  S.blocks = []; S.byHash.clear(); S.known.clear(); S.notes = []; S.bubbles = []; S.ripples = []; S.labels = []; S.drops = [];
+  S.seenFirstPoll = false; S.notesBase = null; S.nullBase = null; S.noteCount = null; S.nullCount = null;
+  pollShielded(); pollPulse(); pollMiners(); pollNodes(); pollReorgs();
+}
 
 // ───────────────────────── particles ─────────────────────────
 function dropNotes(b){
   b.dropped = true;
-  const y = LANE_Y + b.lane*LANE_GAP;
-  for (let i=0;i<b.mintNotes;i++) S.notes.push({ x:b.x + (i-(b.mintNotes-1)/2)*7, y:y+CRATE/2, vx:(Math.random()-.5)*10, vy:20+Math.random()*30, kind:'note', color:b.color, t:0 });
-  for (const tr of b.transfers) S.notes.push({ x:b.x, y:y-6, vx:0, vy:14, kind:'env', actions:tr.actions, id:tr.id, color:C.tealBright, t:0 });
+  const y = LANE_Y - b.lane*LANE_GAP;
+  for (let i=0;i<b.mintNotes;i++) S.notes.push({ x:b.x + (i-(b.mintNotes-1)/2)*9, y:y-CRATE/2-4, vx:(Math.random()-.5)*14, vy:10+Math.random()*30, kind:'note', t:0, trail:[] });
+  for (const tr of b.transfers) S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:0, vy:8, kind:'env', actions:tr.actions, id:tr.id, t:0, trail:[] });
+}
+function splash(x, y, big){
+  const n = big ? 16 : 7;
+  for (let i=0;i<n;i++){ const a = -Math.PI/2 + (Math.random()-.5)*1.6; const v = (big?90:55)*(0.5+Math.random()); S.drops.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, t:0, life:0.5+Math.random()*0.4 }); }
+  S.ripples.push({ x, y, t:0, big });
 }
 function spawnBubbles(n){
-  for (let i=0;i<n;i++) S.bubbles.push({ x: DROP_X*0.5 + Math.random()*(W-DROP_X*0.5-80), y: H+10, r: 3+Math.random()*3, v: 22+Math.random()*18, t:0, wob: Math.random()*6.28 });
-  S.labels.push({ text: n===1 ? 'a note was spent — which one is unknowable' : `${n} notes were spent — which ones is unknowable`, x: W*0.62, y: POOL_Y-14, t:0, life:4 });
+  for (let i=0;i<n;i++) S.bubbles.push({ x: 60 + Math.random()*(W-120), y: H+10, r: 3.5+Math.random()*3.5, v: 24+Math.random()*22, t:0, wob: Math.random()*6.28 });
+  S.labels.push({ text: n===1 ? 'a note was spent — which one is unknowable' : `${n} notes were spent — which ones is unknowable`, x: W*0.55, y: POOL_Y-16, t:0, life:4 });
 }
 
-// ───────────────────────── drawing ─────────────────────────
+// ───────────────────────── drawing primitives ─────────────────────────
 function roundRect(x,y,w,h,r){ cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
-function drawCrate(x,y,color,opts={}){
-  const s = CRATE;
+function drawCrate(x,y,opts={}){
+  const s = CRATE, d = DEPTH, red = !!opts.red, dim = opts.dim ? .6 : 1;
+  const L = x-s/2, R = x+s/2, T = y-s/2, B = y+s/2;
   cx.save();
-  if (opts.glow){ cx.shadowColor = hexA(color,.7); cx.shadowBlur = 14; }
-  roundRect(x-s/2,y-s/2,s,s,5);
-  cx.fillStyle = opts.red ? 'rgba(11,11,15,.9)' : hexA(color, opts.chain===false ? .55 : .9); cx.fill();
-  cx.lineWidth = 1.5; cx.strokeStyle = opts.red ? C.ember : hexA(color,1); cx.stroke();
-  // lid line + seal
-  cx.strokeStyle = 'rgba(11,11,15,.55)'; cx.lineWidth=1; cx.beginPath(); cx.moveTo(x-s/2+4,y-s/2+9); cx.lineTo(x+s/2-4,y-s/2+9); cx.stroke();
+  if (opts.glow){ cx.shadowColor = hexA(red?C.ember:C.teal,.8); cx.shadowBlur = 22; }
+  // top face
+  cx.beginPath(); cx.moveTo(L,T); cx.lineTo(L+d,T-d); cx.lineTo(R+d,T-d); cx.lineTo(R,T); cx.closePath();
+  cx.fillStyle = red ? 'rgba(20,14,14,.95)' : hexA(C.tealBright, .72*dim); cx.fill();
+  // right face
+  cx.beginPath(); cx.moveTo(R,T); cx.lineTo(R+d,T-d); cx.lineTo(R+d,B-d); cx.lineTo(R,B); cx.closePath();
+  cx.fillStyle = red ? 'rgba(14,10,10,.95)' : hexA(C.tealDeep, .95*dim); cx.fill();
+  // front face
+  const g = cx.createLinearGradient(L,T,L,B); g.addColorStop(0, hexA(C.teal,.92*dim)); g.addColorStop(1, hexA(C.teal,.62*dim));
+  cx.fillStyle = red ? 'rgba(11,11,15,.95)' : g; cx.fillRect(L,T,s,s);
+  cx.shadowBlur = 0;
+  // edges
+  cx.lineWidth = 1.2; cx.strokeStyle = red ? C.ember : hexA(C.tealBright,.9*dim);
+  cx.strokeRect(L+.5,T+.5,s-1,s-1);
+  cx.beginPath(); cx.moveTo(L,T); cx.lineTo(L+d,T-d); cx.lineTo(R+d,T-d); cx.lineTo(R+d,B-d); cx.lineTo(R,B); cx.stroke();
+  cx.beginPath(); cx.moveTo(R,T); cx.lineTo(R+d,T-d); cx.stroke();
+  // seal mark on the front
+  cx.strokeStyle = red ? hexA(C.ember,.7) : 'rgba(11,11,15,.55)'; cx.lineWidth = 1.4;
+  cx.beginPath(); cx.arc(x, y+2, 7, 0, 6.283); cx.stroke();
+  cx.beginPath(); cx.moveTo(x-3.5,y+2); cx.lineTo(x-1,y+4.5); cx.lineTo(x+4,y-1); cx.stroke();
+  if (red){ cx.strokeStyle = C.ember; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(L+6,T+6); cx.lineTo(R-6,B-6); cx.stroke(); }
   cx.restore();
 }
-function drawCapsule(x,y,color,scale=1){
+function drawCapsule(x,y,scale=1,alpha=1,bright=true){
   cx.save(); cx.translate(x,y); cx.scale(scale,scale);
-  roundRect(-5,-3,10,6,3); cx.fillStyle = hexA(color,.95); cx.fill();
-  cx.strokeStyle='rgba(11,11,15,.6)'; cx.lineWidth=1; cx.stroke();
+  roundRect(-6,-3.5,12,7,3.5); cx.fillStyle = hexA(bright?C.tealBright:C.teal, alpha); cx.fill();
+  cx.strokeStyle = `rgba(11,11,15,${.6*alpha})`; cx.lineWidth=1; cx.stroke();
   cx.restore();
 }
-function drawEnvelope(x,y,actions,pulse){
-  cx.save(); cx.translate(x,y);
-  cx.shadowColor = hexA(C.teal,.8); cx.shadowBlur = 10+6*pulse;
-  roundRect(-11,-7,22,14,2); cx.fillStyle=C.surface; cx.fill(); cx.strokeStyle=C.tealBright; cx.lineWidth=1.5; cx.stroke();
-  cx.beginPath(); cx.moveTo(-11,-7); cx.lineTo(0,2); cx.lineTo(11,-7); cx.stroke();
-  cx.shadowBlur=0; cx.fillStyle=C.tealBright; cx.font=`500 9px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; cx.textAlign='center';
-  cx.fillText(actions+'×', 0, 19);
+function drawEnvelope(x,y,actions,pulse,alpha=1){
+  cx.save(); cx.translate(x,y); cx.globalAlpha = alpha;
+  cx.shadowColor = hexA(C.tealBright,.9); cx.shadowBlur = 14+10*pulse;
+  roundRect(-14,-9,28,18,3); cx.fillStyle=C.surface; cx.fill(); cx.strokeStyle=C.tealBright; cx.lineWidth=1.6; cx.stroke();
+  cx.beginPath(); cx.moveTo(-14,-9); cx.lineTo(0,3); cx.lineTo(14,-9); cx.stroke();
+  cx.shadowBlur=0; cx.fillStyle=C.tealBright; cx.font=`500 10px ${MONO()}`; cx.textAlign='center';
+  cx.fillText(actions+' actions', 0, 23);
   cx.restore();
 }
 function drawGuideIcons(){
   document.querySelectorAll('.guide canvas').forEach(c=>{
     const g=c.getContext('2d'); c.width=52; c.height=52; g.setTransform(2,0,0,2,0,0);
     const kind=c.dataset.icon;
-    if (kind==='crate'){ g.fillStyle=hexA(C.teal,.85); g.strokeStyle=C.teal; g.lineWidth=1.5; rr(g,4,4,18,18,4); g.fill(); g.stroke(); }
-    if (kind==='lanes'){ [0,1].forEach(i=>{ g.fillStyle=hexA(C.teal,.85); rr(g,4,2+i*13,18,11,3); g.fill(); }); g.strokeStyle=C.ember; g.lineWidth=1.2; rr(g,4,15,18,11,3); g.stroke(); }
+    if (kind==='crate'){ g.fillStyle=hexA(C.tealBright,.7); g.beginPath(); g.moveTo(4,8); g.lineTo(9,3); g.lineTo(25,3); g.lineTo(20,8); g.closePath(); g.fill(); g.fillStyle=hexA(C.tealDeep,.95); g.beginPath(); g.moveTo(20,8); g.lineTo(25,3); g.lineTo(25,19); g.lineTo(20,24); g.closePath(); g.fill(); g.fillStyle=hexA(C.teal,.85); g.fillRect(4,8,16,16); }
+    if (kind==='lanes'){ g.fillStyle=hexA(C.teal,.85); rr(g,4,2,18,10,3); g.fill(); g.strokeStyle=C.ember; g.lineWidth=1.3; rr(g,4,15,18,10,3); g.stroke(); g.beginPath(); g.moveTo(7,18); g.lineTo(19,22); g.stroke(); }
     if (kind==='note'){ [0,1,2].forEach(i=>{ g.fillStyle=C.tealBright; rr(g,3+i*6,10+((i%2)*4),10,6,3); g.fill(); }); }
     if (kind==='env'){ g.strokeStyle=C.tealBright; g.lineWidth=1.5; g.fillStyle=C.surface; rr(g,3,7,20,13,2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(3,7); g.lineTo(13,15); g.lineTo(23,7); g.stroke(); }
-    if (kind==='pool'){ const grd=g.createLinearGradient(0,10,0,26); grd.addColorStop(0,hexA(C.teal,.6)); grd.addColorStop(1,hexA(C.tealDeep,.2)); g.fillStyle=grd; g.beginPath(); g.moveTo(0,14); for(let x=0;x<=26;x+=2) g.lineTo(x,13+Math.sin(x/3)*1.5); g.lineTo(26,26); g.lineTo(0,26); g.closePath(); g.fill(); g.fillStyle='rgba(126,247,228,.8)'; g.beginPath(); g.arc(18,8,2,0,7); g.fill(); }
+    if (kind==='pool'){ const grd=g.createLinearGradient(0,10,0,26); grd.addColorStop(0,hexA(C.teal,.6)); grd.addColorStop(1,hexA(C.tealDeep,.2)); g.fillStyle=grd; g.beginPath(); g.moveTo(0,14); for(let x=0;x<=26;x+=2) g.lineTo(x,13+Math.sin(x/3)*1.5); g.lineTo(26,26); g.lineTo(0,26); g.closePath(); g.fill(); g.strokeStyle='rgba(126,247,228,.9)'; g.beginPath(); g.arc(18,8,2.5,0,7); g.stroke(); }
   });
   function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
 }
 drawGuideIcons();
 
+// ───────────────────────── frame ─────────────────────────
 let last = now();
+const surfAt = (x,t) => POOL_Y + Math.sin(x/90 + t*1.0)*2.6 + Math.sin(x/31 - t*1.6)*1.2;
 function frame(){
   const t = now(), dt = Math.min(0.05, t-last); last = t;
   cx.clearRect(0,0,W,H);
 
-  // ground: faint ember glow like the explorer, and the conveyor rail
-  const g = cx.createRadialGradient(W*0.8,H*0.05,0,W*0.8,H*0.05,W*0.7);
-  g.addColorStop(0,'rgba(255,107,53,.08)'); g.addColorStop(1,'rgba(255,107,53,0)');
-  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  // ── sky: ember glow (explorer ambience) + faint dot grid so the space reads as a floor
+  const g = cx.createRadialGradient(W*0.82,-H*0.05,0,W*0.82,-H*0.05,W*0.7);
+  g.addColorStop(0,'rgba(255,107,53,.10)'); g.addColorStop(1,'rgba(255,107,53,0)');
+  cx.fillStyle=g; cx.fillRect(0,0,W,POOL_Y);
+  cx.fillStyle='rgba(246,246,248,.045)';
+  for (let x=(W%40)/2; x<W; x+=40) for (let y=40; y<POOL_Y-10; y+=40) cx.fillRect(x,y,1,1);
 
-  // pool
-  S.poolLevel = lerp(S.poolLevel, S.poolTarget, dt*0.8);
-  const surfY = POOL_Y;
-  const pg = cx.createLinearGradient(0,surfY,0,H);
-  pg.addColorStop(0, hexA(C.teal, .28)); pg.addColorStop(.25, hexA(C.tealDeep, .32)); pg.addColorStop(1, 'rgba(10,110,99,0.06)');
-  cx.beginPath(); cx.moveTo(0,surfY);
-  for (let x=0;x<=W;x+=8){ const y = surfY + Math.sin(x/70 + t*1.1)*2.2 + Math.sin(x/23 - t*1.7)*1.1; cx.lineTo(x,y); }
+  // ── pool body
+  const pg = cx.createLinearGradient(0,POOL_Y,0,H);
+  pg.addColorStop(0, hexA(C.teal,.30)); pg.addColorStop(.18, hexA(C.tealDeep,.42)); pg.addColorStop(1, 'rgba(7,40,38,.55)');
+  cx.beginPath(); cx.moveTo(0,surfAt(0,t));
+  for (let x=6;x<=W+6;x+=6) cx.lineTo(x,surfAt(x,t));
   cx.lineTo(W,H); cx.lineTo(0,H); cx.closePath(); cx.fillStyle=pg; cx.fill();
-  cx.strokeStyle = hexA(C.tealBright,.35); cx.lineWidth=1; cx.beginPath();
-  for (let x=0;x<=W;x+=8){ const y = surfY + Math.sin(x/70 + t*1.1)*2.2 + Math.sin(x/23 - t*1.7)*1.1; x?cx.lineTo(x,y):cx.moveTo(x,y); }
-  cx.stroke();
-  cx.fillStyle = C.muted2; cx.font=`500 10.5px ${getComputedStyle(document.body).getPropertyValue('--font')}`; cx.textAlign='left';
-  cx.fillText('THE SHIELDED POOL', 22, surfY+22);
+  // caustic light
+  if (!REDUCED){
+    cx.save(); cx.globalCompositeOperation='lighter';
+    for (let i=0;i<3;i++){
+      const cxp = W*(0.2+0.3*i) + Math.sin(t*0.35+i*2)*W*0.12, cyp = POOL_Y + 40 + Math.cos(t*0.27+i)*30;
+      const cg = cx.createRadialGradient(cxp,cyp,0,cxp,cyp,Math.max(220, W*0.22));
+      cg.addColorStop(0, hexA(C.teal,.10)); cg.addColorStop(1,'rgba(0,0,0,0)');
+      cx.fillStyle=cg; cx.fillRect(0,POOL_Y,W,H-POOL_Y);
+    }
+    cx.restore();
+  }
+  // standing field of sealed notes
+  for (const f of S.field){
+    const dx = REDUCED ? 0 : Math.sin(t*f.sp + f.ph)*6;
+    const a = 0.10 + f.d*0.30;
+    cx.fillStyle = hexA(f.d>0.5?C.tealBright:C.teal, a);
+    cx.beginPath(); cx.ellipse(f.x+dx, f.y, 5*f.s, 2.6*f.s, 0, 0, 6.283); cx.fill();
+  }
+  // the pool's headline number, as a watermark on the water
+  const target = S.noteCount==null ? 0 : S.noteCount;
+  S.noteShown = S.noteShown ? lerp(S.noteShown, Math.max(S.noteShown, target), dt*2) : target;
+  if (target){
+    const size = Math.min(NARROW ? W/7 : W/11, 128);
+    cx.font = `500 ${size}px ${MONO()}`; cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillStyle = hexA(C.tealBright,.085); cx.fillText(fmt(S.noteShown), W/2, POOL_Y + (H-POOL_Y)*0.52);
+    cx.font = `500 ${Math.max(11, size*0.14)}px ${FONT()}`; cx.fillStyle = hexA(C.tealBright,.35);
+    cx.fillText('SEALED NOTES IN THE POOL', W/2, POOL_Y + (H-POOL_Y)*0.52 + size*0.62);
+    cx.textBaseline='alphabetic';
+  }
+  // surface line
+  cx.strokeStyle = hexA(C.tealBright,.5); cx.lineWidth=1.2; cx.beginPath();
+  for (let x=0;x<=W+6;x+=6){ const y=surfAt(x,t); x?cx.lineTo(x,y):cx.moveTo(x,y); } cx.stroke();
+  cx.strokeStyle = hexA(C.tealBright,.12); cx.beginPath();
+  for (let x=0;x<=W+6;x+=6){ const y=surfAt(x,t)+7; x?cx.lineTo(x,y):cx.moveTo(x,y); } cx.stroke();
 
-  // conveyor rail
-  cx.strokeStyle = C.grid; cx.lineWidth=1; cx.setLineDash([3,6]); cx.beginPath();
-  cx.moveTo(0, LANE_Y+CRATE/2+8); cx.lineTo(W, LANE_Y+CRATE/2+8); cx.stroke(); cx.setLineDash([]);
-  cx.fillStyle = C.muted2; cx.fillText('BLOCKS ARRIVE →', W-140, LANE_Y-34);
-  // drop marker
-  cx.strokeStyle = hexA(C.teal,.25); cx.setLineDash([2,5]); cx.beginPath(); cx.moveTo(DROP_X, LANE_Y+CRATE/2+8); cx.lineTo(DROP_X, surfY-4); cx.stroke(); cx.setLineDash([]);
+  // ── conveyor rail with second-ticks that move with the blocks
+  const railY = LANE_Y + CRATE/2 + 10;
+  cx.strokeStyle = hexA(C.ink,.16); cx.lineWidth=1; cx.beginPath(); cx.moveTo(0,railY); cx.lineTo(W,railY); cx.stroke();
+  cx.strokeStyle = hexA(C.ink,.10); cx.beginPath(); cx.moveTo(0,railY+4); cx.lineTo(W,railY+4); cx.stroke();
+  const off = ((-(t*SPEED)) % SPEED + SPEED) % SPEED;
+  cx.strokeStyle = hexA(C.ink,.22);
+  for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
+  cx.fillStyle = C.muted; cx.font=`500 10.5px ${FONT()}`; cx.textAlign='right';
+  cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
+  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NOTES DROP HERE', DROP_X, POOL_Y-14);
+  cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(DROP_X, railY+26); cx.lineTo(DROP_X, POOL_Y-26); cx.stroke(); cx.setLineDash([]);
 
-  // blocks: move, edges, draw
+  // ── blocks: positions, threads, crates
   for (const b of S.blocks) b.x = W + CRATE - (t - b.born)*SPEED;
-  cx.lineWidth = 1;
+  cx.lineWidth = 1.2;
   for (const b of S.blocks){
-    if (b.x < -CRATE || b.x > W + CRATE) continue;
-    const y = LANE_Y + b.lane*LANE_GAP;
+    if (b.x < -CRATE || b.x > W + CRATE*2) continue;
+    const y = LANE_Y - b.lane*LANE_GAP;
     for (const p of prevTick(b)){
-      const py = LANE_Y + p.lane*LANE_GAP;
-      cx.strokeStyle = (b.red || p.red) ? hexA(C.ember,.3) : hexA(C.teal,.38);
-      cx.beginPath(); cx.moveTo(b.x-CRATE/2, y); cx.bezierCurveTo(b.x-CRATE, y, p.x+CRATE, py, p.x+CRATE/2, py); cx.stroke();
+      const py = LANE_Y - p.lane*LANE_GAP;
+      cx.strokeStyle = (b.red || p.red) ? hexA(C.ember,.35) : hexA(C.tealBright,.45);
+      cx.beginPath(); cx.moveTo(b.x-CRATE/2, y); cx.bezierCurveTo(b.x-CRATE*1.1, y, p.x+DEPTH+CRATE*1.1, py, p.x+CRATE/2+DEPTH, py); cx.stroke();
     }
   }
+  cx.font=`400 10px ${MONO()}`; cx.textAlign='center';
   for (const b of S.blocks){
-    const y = LANE_Y + b.lane*LANE_GAP;
+    const y = LANE_Y - b.lane*LANE_GAP;
     if (b.x < -CRATE) continue;
-    const fresh = t-b.born < 0.6;
-    drawCrate(b.x, y, b.color, { glow: fresh, red: !!b.red, chain: b.lane===0 });
+    const fresh = t-b.born < 0.7;
+    drawCrate(b.x, y, { glow: fresh, red: !!b.red, dim: b.lane>0 });
+    if (b.lane===0){ cx.fillStyle = hexA(C.muted,.8); cx.fillText(String(b.daa).slice(-4), b.x, railY+16); }
     if (!b.dropped){
-      for (let i=0;i<b.mintNotes;i++) drawCapsule(b.x + (i-(b.mintNotes-1)/2)*7, y+CRATE/2-8, C.tealBright, .8);
-      b.transfers.forEach((tr,i) => drawEnvelope(b.x, y-CRATE/2-12-i*18, tr.actions, .5+.5*Math.sin(t*4)));
+      for (let i=0;i<b.mintNotes;i++) drawCapsule(b.x + (i-(b.mintNotes-1)/2)*9 + DEPTH/2, y-CRATE/2-DEPTH/2-1, .9);
+      b.transfers.forEach((tr,i) => drawEnvelope(b.x+DEPTH/2, y-CRATE/2-DEPTH-22-i*30, tr.actions, .5+.5*Math.sin(t*4)));
       if (b.x <= DROP_X) dropNotes(b);
     }
   }
 
-  // falling notes
+  // ── falling notes / envelopes
   for (const n of S.notes){
-    n.t += dt; n.vy += 140*dt; n.x += n.vx*dt; n.y += n.vy*dt;
-    if (n.kind==='env') drawEnvelope(n.x, n.y, n.actions, 1); else drawCapsule(n.x, n.y, n.color, 1);
-    if (n.y >= surfY){
-      n.dead = true;
-      S.ripples.push({ x:n.x, y:surfY, r:4, t:0, big:n.kind==='env' });
-      if (n.kind==='env') S.labels.push({ text:`sealed transfer · ${n.actions} actions · amount, sender, receiver: hidden`, x:n.x, y:surfY-22, t:0, life:3.2 });
+    n.t += dt;
+    if (!n.sunk){
+      n.vy += 260*dt; n.x += n.vx*dt; n.y += n.vy*dt;
+      n.trail.push({x:n.x,y:n.y}); if (n.trail.length>7) n.trail.shift();
+      for (let i=0;i<n.trail.length;i++){ const p=n.trail[i]; cx.fillStyle = hexA(C.tealBright, .06+i*.05); cx.beginPath(); cx.arc(p.x,p.y, n.kind==='env'?5:3, 0, 6.283); cx.fill(); }
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.actions, 1); else drawCapsule(n.x, n.y, 1);
+      const sy = surfAt(n.x,t);
+      if (n.y >= sy){
+        n.sunk = true; n.st = 0; n.y = sy; splash(n.x, sy, n.kind==='env');
+        S.noteShown += n.kind==='env' ? n.actions : 1;
+        if (n.kind==='env') S.labels.push({ text:`sealed transfer · ${n.actions} actions · amount, sender, receiver: hidden`, x:n.x, y:sy-26, t:0, life:3.4 });
+      }
+    } else {
+      n.st += dt; n.y += 14*dt; const a = Math.max(0, 1 - n.st/1.6);
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.actions, 0, a*0.9); else drawCapsule(n.x, n.y, 1, a);
+      if (n.st >= 1.6) n.dead = true;
     }
   }
   S.notes = S.notes.filter(n=>!n.dead);
+  // splash droplets
+  for (const d of S.drops){
+    d.t += dt; d.vy += 300*dt; d.x += d.vx*dt; d.y += d.vy*dt;
+    cx.fillStyle = hexA(C.tealBright, Math.max(0, 1-d.t/d.life)*.9); cx.beginPath(); cx.arc(d.x,d.y,1.8,0,6.283); cx.fill();
+    if (d.t>=d.life || d.y>surfAt(d.x,t)+4) d.dead = true;
+  }
+  S.drops = S.drops.filter(d=>!d.dead);
   for (const r of S.ripples){
-    r.t += dt; const life = r.big?1.6:0.9; const k=r.t/life;
-    cx.strokeStyle = hexA(r.big?C.tealBright:C.teal, (1-k)*(r.big?.9:.55)); cx.lineWidth = r.big?1.5:1;
-    cx.beginPath(); cx.ellipse(r.x, r.y, 4+k*(r.big?60:26), 2+k*(r.big?12:6), 0, 0, 6.283); cx.stroke();
+    r.t += dt; const life = r.big?1.8:1.0; const k=r.t/life;
+    cx.strokeStyle = hexA(C.tealBright, (1-k)*(r.big?.95:.6)); cx.lineWidth = r.big?1.6:1;
+    cx.beginPath(); cx.ellipse(r.x, r.y, 6+k*(r.big?90:36), 2.5+k*(r.big?16:7), 0, 0, 6.283); cx.stroke();
+    if (r.big){ cx.strokeStyle = hexA(C.tealBright,(1-k)*.4); cx.beginPath(); cx.ellipse(r.x, r.y, 3+k*50, 1.5+k*9, 0, 0, 6.283); cx.stroke(); }
     if (k>=1) r.dead=true;
   }
   S.ripples = S.ripples.filter(r=>!r.dead);
 
-  // bubbles (spends)
+  // ── bubbles (spends)
   for (const u of S.bubbles){
-    u.t += dt; u.y -= u.v*dt; u.x += Math.sin(u.t*3+u.wob)*8*dt;
-    cx.strokeStyle = hexA(C.tealBright,.75); cx.lineWidth=1; cx.beginPath(); cx.arc(u.x,u.y,u.r,0,6.283); cx.stroke();
-    if (u.y <= surfY+2){ u.dead=true; S.ripples.push({x:u.x,y:surfY,r:2,t:0,big:false}); }
+    u.t += dt; u.y -= u.v*dt; u.x += Math.sin(u.t*2.5+u.wob)*10*dt;
+    cx.save(); cx.shadowColor = hexA(C.tealBright,.9); cx.shadowBlur = 8;
+    cx.strokeStyle = hexA(C.tealBright,.85); cx.lineWidth=1.2; cx.beginPath(); cx.arc(u.x,u.y,u.r,0,6.283); cx.stroke();
+    cx.fillStyle = hexA(C.tealBright,.35); cx.beginPath(); cx.arc(u.x-u.r*.35,u.y-u.r*.35,u.r*.28,0,6.283); cx.fill();
+    cx.restore();
+    if (u.y <= surfAt(u.x,t)+2){ u.dead=true; S.ripples.push({x:u.x,y:surfAt(u.x,t),t:0,big:false}); for (let i=0;i<4;i++) S.drops.push({x:u.x,y:u.y,vx:(Math.random()-.5)*60,vy:-40-Math.random()*40,t:0,life:.4}); }
   }
   S.bubbles = S.bubbles.filter(u=>!u.dead);
 
-  // labels
-  cx.font = `500 11.5px ${getComputedStyle(document.body).getPropertyValue('--font')}`; cx.textAlign='center';
+  // ── event labels
+  cx.font = `500 12px ${FONT()}`; cx.textAlign='center';
   for (const l of S.labels){
-    l.t += dt; const a = Math.min(1, l.t*4) * Math.max(0, 1-(l.t-l.life+0.8)/0.8);
-    cx.fillStyle = hexA(C.tealBright, a); cx.fillText(l.text, Math.min(W-160, Math.max(160, l.x)), l.y - l.t*6);
+    l.t += dt; const a = Math.min(1, l.t*4) * Math.max(0, Math.min(1, (l.life-l.t)/0.8));
+    const x = Math.min(W-200, Math.max(200, l.x)), y = l.y - l.t*6;
+    const w = cx.measureText(l.text).width + 20;
+    cx.fillStyle = `rgba(11,11,15,${.85*a})`; roundRect(x-w/2, y-14, w, 22, 6); cx.fill();
+    cx.strokeStyle = hexA(C.tealBright,.35*a); cx.lineWidth=1; cx.stroke();
+    cx.fillStyle = hexA(C.tealBright, a); cx.fillText(l.text, x, y+1);
     if (l.t >= l.life) l.dead = true;
   }
   S.labels = S.labels.filter(l=>!l.dead);
 
-  // hover
+  // bottom fade so the legend stays legible over the field
+  const fg = cx.createLinearGradient(0,H-90,0,H); fg.addColorStop(0,'rgba(11,11,15,0)'); fg.addColorStop(1,'rgba(11,11,15,.9)');
+  cx.fillStyle = fg; cx.fillRect(0,H-90,W,90);
+
   hoverPick();
   requestAnimationFrame(frame);
 }
@@ -474,7 +579,7 @@ cv.addEventListener('mouseleave', () => { mouse = {x:-1,y:-1}; });
 cv.addEventListener('click', () => { if (S.hover && !S.sim) open(`https://explorer.zkas.info/blocks/${S.hover.hash}`,'_blank','noopener'); });
 function hoverPick(){
   let hit=null;
-  for (const b of S.blocks){ const y = LANE_Y + b.lane*LANE_GAP; if (Math.abs(mouse.x-b.x)<=CRATE/2+3 && Math.abs(mouse.y-y)<=CRATE/2+3) hit=b; }
+  for (const b of S.blocks){ const y = LANE_Y - b.lane*LANE_GAP; if (mouse.x>=b.x-CRATE/2-2 && mouse.x<=b.x+CRATE/2+DEPTH+2 && mouse.y>=y-CRATE/2-DEPTH-2 && mouse.y<=y+CRATE/2+2) hit=b; }
   S.hover = hit; cv.style.cursor = hit && !S.sim ? 'pointer' : 'default';
   if (!hit){ tip.classList.remove('on'); return; }
   const age = Math.max(0, Math.round((Date.now()-hit.ts)/1000));
@@ -490,17 +595,18 @@ function hoverPick(){
 }
 
 // ───────────────────────── boot ─────────────────────────
+renderLegend();
 if (FORCE_SIM) startSim('forced with ?sim');
 else {
   pollBlocks(); pollShielded(); pollPulse(); pollMiners(); pollNodes(); pollReorgs();
-  setInterval(() => { if (!S.sim) pollBlocks(); }, 1000);
+  let simTicks = 0;
+  setInterval(() => { if (!S.sim) pollBlocks(); else if (++simTicks % 5 === 0) pollBlocks(); }, 1000);  // in sim, keep probing every 5 s
   setInterval(() => { if (!S.sim) pollShielded(); }, 10000);
   setInterval(() => { if (!S.sim) pollPulse(); }, 15000);
   setInterval(() => { if (!S.sim) pollMiners(); }, 60000);
   setInterval(() => { if (!S.sim) pollNodes(); }, 30000);
   setInterval(() => { if (!S.sim) pollReorgs(); }, 30000);
 }
-renderLegend();
 requestAnimationFrame(frame);
 window.__pool = S;   // read-only debug handle; nothing on this page is secret
 })();
