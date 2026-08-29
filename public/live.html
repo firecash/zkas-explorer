@@ -155,13 +155,13 @@ function resize(){
   const left = NARROW ? 10 : statsR.right + 16, right = W - 10;
   const railY = LANE_Y + CRATE/2 + 10;
   const legendTop = document.getElementById('legend').getBoundingClientRect().top;
-  const topLimit = railY + (NARROW ? 90 : 130), bottomLimit = legendTop - 6;
+  const topLimit = railY + (NARROW ? 70 : 84), bottomLimit = legendTop - 4;
   FADE_X = NARROW ? 0 : statsR.right + 30;
   const availH = Math.max(120, bottomLimit - topLimit);
-  PRX = Math.max(90, Math.min((right-left)/2 - 16, availH/1.04));
-  PRY = PRX*0.52;
-  PCX = (left + right)/2; PCY = bottomLimit - PRY - 8;
-  LAND_Y = PCY - PRY*0.35;
+  PRX = Math.max(90, Math.min((right-left)/2 - 12, availH/1.2));
+  PRY = PRX*0.6;
+  PCX = (left + right)/2; PCY = bottomLimit - PRY - 6;
+  LAND_Y = PCY - PRY*0.42;   // letters hit the water well inside the rim
   buildField();
 }
 addEventListener('resize', resize); resize();
@@ -327,11 +327,19 @@ function stopSim(){
 }
 
 // ───────────────────────── particles ─────────────────────────
+function landing(){
+  // a random point in the upper two thirds of the pool, clear of the rim
+  const a = Math.random()*TAU, r = 0.15 + Math.sqrt(Math.random())*0.6;
+  return { x: PCX + Math.cos(a)*r*PRX, y: PCY - PRY*0.05 - Math.abs(Math.sin(a))*r*PRY*0.9 };
+}
 function dropNotes(b){
   b.dropped = true;
-  const y = LANE_Y - b.lane*LANE_GAP;
-  for (let i=0;i<b.mintNotes;i++) S.notes.push({ x:b.x + (i-(b.mintNotes-1)/2)*9, y:y-CRATE/2-4, vx:(Math.random()-.5)*16, vy:10+Math.random()*30, kind:'note', t:0, trail:[], land: LAND_Y + (Math.random()-.5)*PRY*0.3 });
-  for (const tr of b.transfers) S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:0, vy:8, kind:'env', parcels:tr.parcels, id:tr.id, t:0, trail:[], land: LAND_Y });
+  const y = LANE_Y - b.lane*LANE_GAP, y0 = y-CRATE/2-4;
+  const T = 0.95;                                  // ~seconds in the air; sideways speed aims at the landing point
+  for (let i=0;i<b.mintNotes;i++){ const L = landing(); const x0 = b.x + (i-(b.mintNotes-1)/2)*9;
+    S.notes.push({ x:x0, y:y0, vx:(L.x-x0)/T, vy:10+Math.random()*20, kind:'note', t:0, trail:[], land:L.y }); }
+  for (const tr of b.transfers){ const L = landing();
+    S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:(L.x-b.x)/T, vy:8, kind:'env', parcels:tr.parcels, id:tr.id, t:0, trail:[], land:L.y }); }
 }
 function splash(x, y, big){
   const n = big ? 16 : 7;
@@ -478,7 +486,7 @@ function frame(){
   for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
   cx.fillStyle = C.muted; cx.textAlign='right';
   cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
-  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 10);
+  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 12);
   cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(PCX, railY+26); cx.lineTo(PCX, PCY - PRY - 24); cx.stroke(); cx.setLineDash([]);
 
   // ── blocks: positions, threads, crates
@@ -487,10 +495,14 @@ function frame(){
   for (const b of S.blocks){
     if (b.x < -CRATE || b.x > W + CRATE*2) continue;
     const y = LANE_Y - b.lane*LANE_GAP;
-    for (const p of prevTick(b)){
-      const py = LANE_Y - p.lane*LANE_GAP;
-      cx.strokeStyle = hexA(C.tealBright,.45);
-      cx.beginPath(); cx.moveTo(b.x-CRATE/2, y); cx.bezierCurveTo(b.x-CRATE*1.1, y, p.x+DEPTH+CRATE*1.1, py, p.x+CRATE/2+DEPTH, py); cx.stroke();
+    const prev = prevTick(b).find(o=>o.lane===0) || prevTick(b)[0];
+    cx.strokeStyle = hexA(C.tealBright,.42);
+    if (b.lane===0 && prev){
+      const py = LANE_Y - prev.lane*LANE_GAP;
+      cx.beginPath(); cx.moveTo(b.x-CRATE/2, y); cx.bezierCurveTo(b.x-CRATE*1.1, y, prev.x+DEPTH+CRATE*1.1, py, prev.x+CRATE/2+DEPTH, py); cx.stroke();
+    } else if (b.lane>0){
+      const below = S.blocks.find(o => o.lane===b.lane-1 && Math.abs(o.born-b.born)<0.9);
+      if (below){ cx.beginPath(); cx.moveTo(b.x, y+CRATE/2); cx.lineTo(below.x, LANE_Y - below.lane*LANE_GAP - CRATE/2 - DEPTH); cx.stroke(); }
     }
   }
   cx.font=`400 10px ${MONO()}`; cx.textAlign='center';
@@ -517,15 +529,15 @@ function frame(){
       n.vy += 260*dt; n.x += n.vx*dt; n.y += n.vy*dt;
       n.trail.push({x:n.x,y:n.y}); if (n.trail.length>7) n.trail.shift();
       for (let i=0;i<n.trail.length;i++){ const p=n.trail[i]; cx.fillStyle = hexA(C.tealBright, .06+i*.05); cx.beginPath(); cx.arc(p.x,p.y, n.kind==='env'?5:3, 0, TAU); cx.fill(); }
-      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 1); else drawCapsule(n.x, n.y, 1);
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 1); else drawCapsule(n.x, n.y, 1.35);
       if (n.y >= n.land){
         n.sunk = true; n.st = 0; n.y = n.land; splash(n.x, n.land, n.kind==='env');
         S.noteShown += n.kind==='env' ? n.parcels : 1;
         if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} letters moved · who and how much: private`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
       }
     } else {
-      n.st += dt; n.y += 10*dt; const a = Math.max(0, 1 - n.st/1.4);
-      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 0, a*0.9); else drawCapsule(n.x, n.y, 1, a);
+      n.st += dt; n.y += 12*dt; const a = Math.max(0, 1 - n.st/1.4);
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 0, a*0.9); else drawCapsule(n.x, n.y, 1.35, a);
       if (n.st >= 1.4) n.dead = true;
     }
   }
