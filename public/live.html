@@ -335,11 +335,12 @@ function landing(){
 function dropNotes(b){
   b.dropped = true;
   const y = LANE_Y - b.lane*LANE_GAP, y0 = y-CRATE/2-4;
-  const T = 0.95;                                  // ~seconds in the air; sideways speed aims at the landing point
-  for (let i=0;i<b.mintNotes;i++){ const L = landing(); const x0 = b.x + (i-(b.mintNotes-1)/2)*9;
-    S.notes.push({ x:x0, y:y0, vx:(L.x-x0)/T, vy:10+Math.random()*20, kind:'note', t:0, trail:[], land:L.y }); }
-  for (const tr of b.transfers){ const L = landing();
-    S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:(L.x-b.x)/T, vy:8, kind:'env', parcels:tr.parcels, id:tr.id, t:0, trail:[], land:L.y }); }
+  // time in the air from the fall physics (g = 260 px/s²), so the sideways speed lands exactly on target
+  const G = 260, flight = (y0, vy, yl) => (-vy + Math.sqrt(vy*vy + 2*G*(yl-y0)))/G;
+  for (let i=0;i<b.mintNotes;i++){ const L = landing(); const x0 = b.x + (i-(b.mintNotes-1)/2)*9, vy = 10+Math.random()*20;
+    S.notes.push({ x:x0, y:y0, vx:(L.x-x0)/flight(y0,vy,L.y), vy, kind:'note', t:0, trail:[], land:L.y }); }
+  for (const tr of b.transfers){ const L = landing(), ye = y-CRATE/2-28;
+    S.notes.push({ x:b.x, y:ye, vx:(L.x-b.x)/flight(ye,8,L.y), vy:8, kind:'env', parcels:tr.parcels, id:tr.id, t:0, trail:[], land:L.y }); }
 }
 function splash(x, y, big){
   const n = big ? 16 : 7;
