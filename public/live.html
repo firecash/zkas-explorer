@@ -126,7 +126,7 @@ const SOMPI = 1e8;
 const SPEED = 62;             // px per second the conveyor moves
 const CRATE = 44;             // crate face size
 const DEPTH = 11;             // isometric depth
-const LANE_GAP = 60;          // vertical gap between DAG siblings
+let LANE_GAP = 60;            // vertical gap between stacked crates (set per viewport in resize)
 const C = {
   bg:'#0b0b0f', surface:'#16161d', grid:'#24242e', ink:'#f6f6f8', muted:'#9090a0', muted2:'#5d5d6c',
   teal:'#17d6be', tealBright:'#7ef7e4', tealDeep:'#0a6e63', ember:'#ff6b35', alert:'#f59e3c'
@@ -151,7 +151,7 @@ function resize(){
   stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
   const statsBottom = stats.getBoundingClientRect().bottom;
   NARROW = W < 600;
-  MAX_LANE = NARROW ? 1 : 2;
+  MAX_LANE = 2; LANE_GAP = NARROW ? 50 : 60;
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
   const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
   LANE_Y = NARROW ? statsBottom + head : Math.max(H*0.34, brand.getBoundingClientRect().bottom + head);
@@ -200,8 +200,13 @@ function addBlock(b, born){
   b.born = born ?? now();
   // Lane = stack over whatever arrived in the same ~0.8 s so crates never overlap;
   // the tooltip's "siblings" wording is based on DAA score, not on this.
-  const near = S.blocks.filter(o => Math.abs(o.born - b.born) < 0.8);
-  let lane = 0; while (near.some(o => o.lane === lane) && lane < MAX_LANE) lane++;
+  let lane = 0;
+  for (let attempt=0; attempt<4; attempt++){
+    const near = S.blocks.filter(o => Math.abs(o.born - b.born) < 0.8);
+    lane = 0; while (near.some(o => o.lane === lane) && lane < MAX_LANE) lane++;
+    if (!near.some(o => o.lane === lane)) break;
+    b.born -= 0.85;              // every lane taken: show it a beat earlier rather than on top of another crate
+  }
   b.lane = lane; b.x = W + CRATE; b.dropped = false;
   S.blocks.push(b); S.byHash.set(b.hash, b);
   if (S.blocks.length > 90) { const old = S.blocks.shift(); S.byHash.delete(old.hash); }
