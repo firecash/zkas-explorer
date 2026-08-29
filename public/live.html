@@ -496,7 +496,7 @@ function frame(){
   for (const b of S.blocks){
     if (b.x < -CRATE || b.x > W + CRATE*2) continue;
     const y = LANE_Y - b.lane*LANE_GAP;
-    const prev = prevTick(b).find(o=>o.lane===0) || prevTick(b)[0];
+    const prev = prevTick(b).slice().sort((a,c)=>a.lane-c.lane || c.x-a.x)[0];   // lowest row, nearest crate
     cx.strokeStyle = hexA(C.tealBright,.42);
     if (b.lane===0 && prev){
       const py = LANE_Y - prev.lane*LANE_GAP;
