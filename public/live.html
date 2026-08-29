@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Live animation of the ZKAS blockDAG dropping sealed letters of coins into the shielded pool.">
+<meta name="description" content="Live animation of the ZKAS blockDAG dropping private letters of coins into the shielded pool.">
 <meta name="robots" content="noindex">
 <title>Shielded Pool Live</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,7 +77,7 @@
 <body>
 
 
-<canvas id="stage" aria-label="Live animation of ZKAS blocks dropping sealed letters of coins into the shielded pool"></canvas>
+<canvas id="stage" aria-label="Live animation of ZKAS blocks dropping private letters of coins into the shielded pool"></canvas>
 
 <div class="hud brand">
   <h1>Shielded Pool <small>zkas · live</small></h1>
@@ -87,11 +87,11 @@
 <div class="hud stats" id="stats">
   <div class="grp"><h3>Right now</h3>
     <div class="stat"><div class="k"><span>New blocks per second</span></div><div class="v" id="bps">–</div><div class="s" id="bps-s"></div></div>
-    <div class="stat"><div class="k"><span>Payments, last hour</span></div><div class="v" id="pay">–</div><div class="s">who · to whom · how much: sealed</div></div>
+    <div class="stat"><div class="k"><span>Payments, last hour</span></div><div class="v" id="pay">–</div><div class="s">who · to whom · how much: private</div></div>
   </div>
   <div class="grp"><h3>Inside the pool</h3>
-    <div class="stat"><div class="k"><span>Sealed letters</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">coins inside · nobody can read them</div></div>
-    <div class="stat"><div class="k"><span>ZKAS inside</span></div><div class="v" id="held">–</div><div class="s">all of it in sealed letters</div></div>
+    <div class="stat"><div class="k"><span>Private letters</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">coins inside · nobody can read them</div></div>
+    <div class="stat"><div class="k"><span>ZKAS inside</span></div><div class="v" id="held">–</div><div class="s">all of it in private letters</div></div>
     <div class="stat"><div class="k"><span>Letters opened, ever</span><span class="delta" id="spent-d"></span></div><div class="v" id="spent">–</div><div class="s">to spend, you open one · which one stays secret</div></div>
   </div>
   <div class="grp"><h3>Who runs it</h3>
@@ -102,8 +102,8 @@
 <div class="hud legend" id="legend">
   <span><canvas data-icon="crate"></canvas><b>Crate</b> = a block · one every second</span>
   <span><canvas data-icon="lanes"></canvas><b>Two at once</b> = both kept</span>
-  <span><canvas data-icon="note"></canvas><b>Small envelope</b> = new coins, sealed in a letter</span>
-  <span><canvas data-icon="env"></canvas><b>Glowing envelope</b> = a payment · who &amp; how much: sealed</span>
+  <span><canvas data-icon="note"></canvas><b>Small envelope</b> = new coins in a private letter</span>
+  <span><canvas data-icon="env"></canvas><b>Glowing envelope</b> = a payment · who &amp; how much: private</span>
   <span><canvas data-icon="pool"></canvas><b>Bubble</b> = a letter opened to spend it · which one: secret</span>
 </div>
 <span id="lat" hidden></span>
@@ -451,7 +451,7 @@ function frame(){
     cx.fillStyle = 'rgba(11,11,15,.35)'; cx.fillText(fmt(S.noteShown), PCX, PCY+2);
     cx.fillStyle = hexA(C.tealBright,.9); cx.fillText(fmt(S.noteShown), PCX, PCY);
     cx.font = `500 ${Math.max(10, size*0.15)}px ${FONT()}`; cx.fillStyle = hexA(C.tealBright,.6);
-    cx.fillText('SEALED LETTERS', PCX, PCY + size*0.62);
+    cx.fillText('PRIVATE LETTERS', PCX, PCY + size*0.62);
     cx.textBaseline='alphabetic';
   }
   // ripples (inside the pool)
@@ -521,7 +521,7 @@ function frame(){
       if (n.y >= n.land){
         n.sunk = true; n.st = 0; n.y = n.land; splash(n.x, n.land, n.kind==='env');
         S.noteShown += n.kind==='env' ? n.parcels : 1;
-        if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} letters moved · who and how much: sealed`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
+        if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} letters moved · who and how much: private`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
       }
     } else {
       n.st += dt; n.y += 10*dt; const a = Math.max(0, 1 - n.st/1.4);
@@ -584,7 +584,7 @@ function hoverPick(){
   const status = sibs>1 ? `one of ${sibs} blocks found in the same second — all kept` : 'confirmed';
   tip.innerHTML = `<div class="h">Block #${fmt(hit.daa)}</div>
     <div class="m">${hit.hash.slice(0,12)}… · ${age}s ago</div>
-    <div>${hit.mintNotes} sealed letter${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
+    <div>${hit.mintNotes} private letter${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
     <div class="m">${status}</div>
     <div class="no">${S.sim?'simulated block':'click to open in explorer'}</div>`;
   tip.style.left = Math.min(W-280, mouse.x+14)+'px'; tip.style.top = Math.min(H-120, mouse.y+14)+'px';
