@@ -155,7 +155,7 @@ function resize(){
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
   const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
   LANE_Y = NARROW ? statsBottom + head : Math.max(H*0.34, brand.getBoundingClientRect().bottom + head);
-  POOL_Y = Math.max(H*0.58, LANE_Y + Math.min(210, H*0.26));
+  POOL_Y = Math.max(H*0.58, LANE_Y + (NARROW ? 130 : Math.min(210, H*0.26)));
   DROP_X = NARROW ? W*0.42 : Math.max(300, W*0.36);
   buildField();
 }
