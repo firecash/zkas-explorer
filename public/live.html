@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Live animation of the ZKAS blockDAG delivering sealed notes into the shielded pool.">
+<meta name="description" content="Live animation of the ZKAS blockDAG dropping sealed parcels of coins into the shielded pool.">
 <meta name="robots" content="noindex">
 <title>Shielded Pool Live</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
 <style>
-  /* Matches explorer.zkas.info tokens (app.css): dark-only, teal primary, ember alert. */
+  /* Matches explorer.zkas.info tokens (app.css): dark-only, teal primary, ember accent. */
   :root{
     --bg:#0b0b0f; --surface:#16161d; --grid:#24242e;
     --ink:#f6f6f8; --ink-2:#c9c9d4; --muted:#9090a0; --muted-2:#5d5d6c;
@@ -33,16 +33,21 @@
   .pill.sim{color:var(--alert);border-color:rgba(245,158,60,.4)}
   @keyframes blink{50%{opacity:.35}}
 
-  .stats{top:66px;left:22px;display:grid;gap:10px;width:214px}   /* top is re-measured in JS */
-  .stat{background:rgba(22,22,29,.93);border:1px solid var(--grid);border-radius:14px;padding:10px 13px;backdrop-filter:blur(6px)}
-  .stat .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
-  .stat .v{font:500 22px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:3px;color:var(--ink)}
+  /* left column: the numbers, in three groups */
+  .stats{top:66px;left:22px;display:grid;gap:12px;width:214px}   /* top is re-measured in JS */
+  .grp{display:grid;gap:6px}
+  .grp h3{margin:0 0 1px 4px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);font-weight:500}
+  .stat{background:rgba(22,22,29,.93);border:1px solid var(--grid);border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  .stat .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+  .stat .v{font:500 21px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:2px;color:var(--ink)}
   .stat .v.t{color:var(--teal)}
-  .stat .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .stat .s{font-size:11.5px;color:var(--muted);margin-top:1px}
   .stat .delta{color:var(--teal-bright);font:500 11px var(--mono)}
 
-  .guide{bottom:52px;right:22px;width:280px;background:rgba(22,22,29,.86);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
-  .guide h2{margin:0 0 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  /* right column: how to read it */
+  .guide{bottom:52px;right:22px;width:284px;background:rgba(22,22,29,.9);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
+  .guide h2{margin:0 0 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+  .guide h2 button{display:none}
   .guide ol{margin:0;padding:0;list-style:none;display:grid;gap:9px}
   .guide li{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;color:var(--ink-2);font-size:12.5px;line-height:1.4}
   .guide li b{color:var(--ink);font-weight:500}
@@ -50,6 +55,8 @@
   .guide .foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--grid);font-size:11.5px;color:var(--muted)}
   .guide .foot a{color:var(--teal);text-decoration:none}
   .guide .foot a:hover{text-decoration:underline}
+  .help{display:none;position:fixed;z-index:4;top:18px;right:22px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(23,214,190,.45);background:rgba(22,22,29,.9);color:var(--teal);font:600 16px var(--font);align-items:center;justify-content:center;cursor:pointer}
+  .help:focus-visible,.guide button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
   .tip{position:fixed;z-index:3;pointer-events:none;background:rgba(11,11,15,.94);border:1px solid var(--grid);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--ink-2);max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
   .tip.on{opacity:1;transform:none}
@@ -64,13 +71,24 @@
   .caption .src{font:11px var(--mono);white-space:nowrap}
   .caption .src a{color:var(--muted)}
 
-  @media (max-width:900px){ .guide{display:none} .stats{width:170px} .stat .v{font-size:18px} }
+  @media (max-width:900px){
+    .guide{display:none}
+    .guide.open{display:block;left:16px;right:16px;width:auto;bottom:auto;top:50%;transform:translateY(-50%);z-index:5;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+    .guide h2 button{display:inline-block;background:none;border:0;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
+    .help{display:flex}
+    .brand{right:70px}
+    .stats{width:170px}
+    .stat .v{font-size:18px}
+  }
   @media (max-width:600px){
-    .brand{flex-wrap:wrap;gap:8px;right:22px}
+    .brand{flex-wrap:wrap;gap:8px}
     .brand h1 small{display:block;margin:2px 0 0}
     .pill{font-size:10px;padding:5px 8px}
-    .stats{grid-template-columns:1fr 1fr;width:calc(100vw - 44px);gap:8px}
-    .stat{padding:8px 10px}
+    .stats{width:calc(100vw - 44px);gap:8px;grid-template-columns:1fr 1fr}
+    .grp{display:contents}
+    .grp h3{display:none}
+    .stat{padding:7px 10px}
+    .stat .v{font-size:17px}
     .stat .s{display:none}
     .caption .src{display:none}
     .caption .leg{gap:10px}
@@ -81,31 +99,39 @@
 <body>
 
 
-<canvas id="stage" aria-label="Live animation of ZKAS blocks delivering sealed notes into the shielded pool"></canvas>
+<canvas id="stage" aria-label="Live animation of ZKAS blocks dropping sealed parcels of coins into the shielded pool"></canvas>
 
 <div class="hud brand">
   <h1>Shielded Pool <small>zkas · live</small></h1>
   <span class="pill" id="status">connecting</span>
 </div>
+<button class="help" id="help" aria-label="How to read this page">?</button>
 
 <div class="hud stats" id="stats">
-  <div class="stat"><div class="k"><span>Blocks / second</span></div><div class="v" id="bps">–</div><div class="s" id="bps-s">1 block every second by design</div></div>
-  <div class="stat"><div class="k"><span>Notes in the pool</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">sealed; amounts &amp; owners unknowable</div></div>
-  <div class="stat"><div class="k"><span>Notes spent, ever</span><span class="delta" id="spent-d"></span></div><div class="v" id="spent">–</div><div class="s">a spend reveals only that <em>a</em> note was used</div></div>
-  <div class="stat"><div class="k"><span>ZKAS inside</span></div><div class="v" id="held">–</div><div class="s">everything ever minted went straight in</div></div>
-  <div class="stat"><div class="k"><span>Miners · nodes</span></div><div class="v" id="net">–</div><div class="s" id="net-s">Nakamoto coefficient –</div></div>
+  <div class="grp"><h3>Right now</h3>
+    <div class="stat"><div class="k"><span>New blocks per second</span></div><div class="v" id="bps">–</div><div class="s" id="bps-s">one every second by design</div></div>
+    <div class="stat"><div class="k"><span>Payments, last hour</span></div><div class="v" id="pay">–</div><div class="s">all private — who, to whom, how much: hidden</div></div>
+  </div>
+  <div class="grp"><h3>Inside the pool</h3>
+    <div class="stat"><div class="k"><span>Sealed parcels</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">every coin lives in one; nobody can see inside</div></div>
+    <div class="stat"><div class="k"><span>ZKAS held</span></div><div class="v" id="held">–</div><div class="s">every coin ever minted went straight in</div></div>
+    <div class="stat"><div class="k"><span>Parcels spent, ever</span><span class="delta" id="spent-d"></span></div><div class="v" id="spent">–</div><div class="s">spending reveals only that <em>some</em> parcel was used</div></div>
+  </div>
+  <div class="grp"><h3>Who runs it</h3>
+    <div class="stat"><div class="k"><span>Miners · nodes</span></div><div class="v" id="net">–</div><div class="s" id="net-s">–</div></div>
+  </div>
 </div>
 
 <div class="hud guide" id="guide">
-  <h2>What am I looking at?</h2>
+  <h2>How to read this <button id="close" aria-label="Close">×</button></h2>
   <ol>
-    <li><canvas data-icon="crate"></canvas><div><b>Crates are blocks.</b> One arrives every second and rolls left; the threads point at the blocks it builds on.</div></li>
-    <li><canvas data-icon="lanes"></canvas><div><b>Stacked crates are DAG siblings</b> — found in the same second, all kept. An orange outline means a reorg dropped it.</div></li>
-    <li><canvas data-icon="note"></canvas><div><b>Capsules are sealed notes.</b> Each block mints its reward straight into sealed form.</div></li>
-    <li><canvas data-icon="env"></canvas><div><b>Envelopes are people's transfers.</b> You can see one happened and how many parts it has. Nothing else.</div></li>
-    <li><canvas data-icon="pool"></canvas><div><b>The pool is the shielded pool.</b> Notes sink in and stay. Bubbles rising = a note somewhere was spent.</div></li>
+    <li><canvas data-icon="crate"></canvas><div><b>Each crate is a block.</b> A new one every second, rolling left. The lines link it to the blocks it confirms.</div></li>
+    <li><canvas data-icon="lanes"></canvas><div><b>Two crates at once?</b> Both are kept — this network throws nothing away.</div></li>
+    <li><canvas data-icon="note"></canvas><div><b>Capsules are freshly minted coins,</b> sealed into a parcel the moment they leave the block.</div></li>
+    <li><canvas data-icon="env"></canvas><div><b>Envelopes are payments.</b> You can see one happened and how many parcels moved. Not who, not how much.</div></li>
+    <li><canvas data-icon="pool"></canvas><div><b>The pool holds every coin, sealed.</b> Bubbles mean someone spent a parcel — which one, nobody can tell.</div></li>
   </ol>
-  <div class="foot">This page is deliberately blind: no addresses, no amounts, no balances exist to show. <a href="https://explorer.zkas.info" target="_blank" rel="noopener">Open the explorer →</a></div>
+  <div class="foot">This page is blind on purpose: there are no addresses, amounts or balances to show — the network itself can't see them. <a href="https://explorer.zkas.info" target="_blank" rel="noopener">Open the explorer →</a></div>
 </div>
 
 <div class="hud caption">
@@ -122,11 +148,12 @@ const qs = new URLSearchParams(location.search);
 const API = qs.get('api') || (location.hostname.endsWith('zkas.info') ? '/api' : 'https://explorer.zkas.info/api');
 const FORCE_SIM = qs.has('sim');
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const SOMPI = 1e8;
+const SOMPI = 1e8, TAU = Math.PI*2;
 const SPEED = 62;             // px per second the conveyor moves
 const CRATE = 44;             // crate face size
 const DEPTH = 11;             // isometric depth
-let LANE_GAP = 60;            // vertical gap between stacked crates (set per viewport in resize)
+let LANE_GAP = 60;            // vertical gap between stacked crates (set per viewport)
+const MAX_LANE = 2;
 const C = {
   bg:'#0b0b0f', surface:'#16161d', grid:'#24242e', ink:'#f6f6f8', muted:'#9090a0', muted2:'#5d5d6c',
   teal:'#17d6be', tealBright:'#7ef7e4', tealDeep:'#0a6e63', ember:'#ff6b35', alert:'#f59e3c'
@@ -138,25 +165,34 @@ const MONO = () => getComputedStyle(document.body).getPropertyValue('--mono');
 const S = {
   sim:false, blocks:[], byHash:new Map(), known:new Set(), notes:[], bubbles:[], ripples:[], labels:[], drops:[], field:[],
   noteCount:null, nullCount:null, notesBase:null, nullBase:null, noteShown:0,
-  turnstile:null, bps:null, nakamoto:null, minersN:null, nodes:null, countries:null, reorgsPerHour:null,
+  turnstile:null, bps:null, nakamoto:null, minersN:null, nodes:null, countries:null,
   latency:null, hover:null, seenFirstPoll:false
 };
 const cv = document.getElementById('stage'), cx = cv.getContext('2d');
-let W=0,H=0,DPR=1, DROP_X=0, POOL_Y=0, LANE_Y=0, NARROW=false, MAX_LANE=2;
+let W=0,H=0,DPR=1, LANE_Y=0, NARROW=false, PCX=0, PCY=0, PRX=0, PRY=0, LAND_Y=0, FADE_X=0;
 function resize(){
   DPR = Math.min(devicePixelRatio||1, 2);
   W = innerWidth; H = innerHeight;
   cv.width = W*DPR; cv.height = H*DPR; cx.setTransform(DPR,0,0,DPR,0,0);
   const brand = document.querySelector('.brand'), stats = document.getElementById('stats');
   stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
-  const statsBottom = stats.getBoundingClientRect().bottom;
+  const statsR = stats.getBoundingClientRect();
   NARROW = W < 600;
-  MAX_LANE = 2; LANE_GAP = NARROW ? 50 : 60;
+  const guideOn = W >= 900;
+  LANE_GAP = NARROW ? 50 : 60;
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
   const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
-  LANE_Y = NARROW ? statsBottom + head : Math.max(H*0.34, brand.getBoundingClientRect().bottom + head);
-  POOL_Y = Math.max(H*0.58, LANE_Y + (NARROW ? 130 : Math.min(210, H*0.26)));
-  DROP_X = NARROW ? W*0.42 : Math.max(300, W*0.36);
+  LANE_Y = NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
+  // The pool sits in the band the HUD leaves free, anchored to the bottom.
+  const left = NARROW ? 10 : statsR.right + 16, right = guideOn ? W - 330 : W - 10;
+  const railY = LANE_Y + CRATE/2 + 10;
+  const topLimit = railY + (NARROW ? 90 : 130), bottomLimit = H - (NARROW ? 84 : 62);
+  FADE_X = NARROW ? 0 : statsR.right + 30;
+  const availH = Math.max(120, bottomLimit - topLimit);
+  PRX = Math.max(90, Math.min((right-left)/2 - 16, availH/1.04));
+  PRY = PRX*0.52;
+  PCX = (left + right)/2; PCY = bottomLimit - PRY - 8;
+  LAND_Y = PCY - PRY*0.35;
   buildField();
 }
 addEventListener('resize', resize); resize();
@@ -173,20 +209,21 @@ function setStatus(kind, text){ const p=el('status'); p.className='pill '+kind; 
 function renderLegend(){
   el('legend').innerHTML =
     `<span><i style="background:${hexA(C.teal,.85)}"></i>block</span>` +
-    `<span><i style="background:${hexA(C.teal,.85)};box-shadow:0 -7px 0 -1px ${hexA(C.teal,.5)}"></i>siblings (same DAA tick)</span>` +
-    `<span><i style="background:transparent;border:1px solid ${C.ember};border-radius:3px"></i>orphaned by a reorg</span>` +
-    `<span><i style="background:${C.tealBright};border-radius:5px"></i>sealed note</span>` +
-    `<span><i style="background:transparent;border:1px solid ${C.tealBright};border-radius:50%"></i>spend</span>`;
+    `<span><i style="background:${hexA(C.teal,.85)};box-shadow:0 -7px 0 -1px ${hexA(C.teal,.5)}"></i>two blocks at once (both kept)</span>` +
+    `<span><i style="background:${C.tealBright};border-radius:5px"></i>sealed parcel of coins</span>` +
+    `<span><i style="background:transparent;border:1px solid ${C.tealBright};border-radius:50%"></i>a parcel was spent</span>`;
 }
+function inPool(x,y){ const dx=(x-PCX)/PRX, dy=(y-PCY)/PRY; return dx*dx+dy*dy <= 1; }
+function clipPool(){ cx.beginPath(); cx.ellipse(PCX,PCY,PRX,PRY,0,0,TAU); cx.clip(); }
 
-// The standing contents of the pool: a field of sealed capsules, denser with depth.
+// The standing contents of the pool: a field of sealed parcels, denser toward the middle.
 function buildField(){
-  const n = REDUCED ? 300 : Math.max(300, Math.min(1600, Math.round(W*(H-POOL_Y)/700)));
+  const n = REDUCED ? 250 : Math.max(250, Math.min(1400, Math.round(PRX*PRY/95)));
   const rnd = mulberry(7);
   S.field = [];
   for (let i=0;i<n;i++){
-    const d = Math.pow(rnd(), 0.6);                       // bias toward the bottom
-    S.field.push({ x: rnd()*W, y: POOL_Y + 26 + d*(H-POOL_Y-30), d, s: 0.55+rnd()*0.7, ph: rnd()*6.283, sp: 0.15+rnd()*0.35 });
+    const r = Math.sqrt(rnd())*0.97, a = rnd()*TAU;
+    S.field.push({ x: PCX + Math.cos(a)*r*PRX, y: PCY + Math.sin(a)*r*PRY, d:r, s: 0.55+rnd()*0.7, ph: rnd()*TAU, sp: 0.15+rnd()*0.35 });
   }
 }
 function mulberry(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -198,8 +235,7 @@ function mulberry(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a
 function addBlock(b, born){
   if (S.byHash.has(b.hash)) return;
   b.born = born ?? now();
-  // Lane = stack over whatever arrived in the same ~0.8 s so crates never overlap;
-  // the tooltip's "siblings" wording is based on DAA score, not on this.
+  // Lane = stack over whatever arrived in the same ~0.8 s so crates never overlap.
   let lane = 0;
   for (let attempt=0; attempt<4; attempt++){
     const near = S.blocks.filter(o => Math.abs(o.born - b.born) < 0.8);
@@ -217,12 +253,12 @@ function prevTick(b){
   return best==null ? [] : S.blocks.filter(o => o.daa===best);
 }
 function normaliseRecent(list){
-  // /blocks/recent, newest first. txs[0] = coinbase; its outputs = one entry per minted note.
+  // /blocks/recent, newest first. txs[0] = coinbase; its outputs = one entry per minted parcel.
   return list.slice().reverse().map(r => {
     const cb = r.txs && r.txs[0];
     const mintNotes = cb ? Math.max(1, cb.outputs.filter(o=>o[1]==='shielded').length) : 1;
     const transfers = (r.txs||[]).slice(1).filter(t => t.outputs.length===1 && t.outputs[0][1]==='shielded')
-      .map(t => ({ id:t.txId, actions: +t.outputs[0][0] || 2 }));
+      .map(t => ({ id:t.txId, parcels: +t.outputs[0][0] || 2 }));
     const others = Math.max(0, (r.txCount||1) - 1 - transfers.length);
     return { hash:r.block_hash, daa:+r.daaScore, blue:+r.blueScore, ts:+r.timestamp, txCount:r.txCount, mintNotes, transfers, others };
   });
@@ -245,19 +281,16 @@ async function pollBlocks(){
     fresh.forEach(b => S.known.add(b.hash));
     if (S.known.size > 3000) S.known = new Set(fresh.map(b=>b.hash));
     if (!S.seenFirstPoll) {
-      // Seed the conveyor with the last ~18 s so the screen isn't empty on load.
       const seed = fresh.slice(-18);
       const t0 = now(), maxTs = Math.max(...seed.map(b=>b.ts));
       seed.forEach(b => addBlock(b, t0 - Math.min(20, Math.max(0, (maxTs - b.ts)/1000))));
       S.seenFirstPoll = true;
     } else if (unseen.length) {
-      // Space same-poll arrivals by their real timestamps instead of dumping them on one x.
       const t0 = now(), maxTs = Math.max(...unseen.map(b=>b.ts));
       unseen.forEach(b => addBlock(b, t0 - Math.min(3, Math.max(0, (maxTs - b.ts)/1000))));
     }
     failures = 0; setStatus('live','live · mainnet');
   }catch(e){
-    // Six misses in a row (~6 s) before giving up on live data; a single blip just skips a tick.
     if (++failures >= 6 && !S.sim) startSim('no route to the API from here');
   }
 }
@@ -280,21 +313,14 @@ async function pollPulse(){
   try{
     const d = await (await fetch(`${API}/info/pulse?window=15m`,{cache:'no-store'})).json();
     S.bps = d.bps15m; el('bps').textContent = d.bps15m.toFixed(2);
-    el('bps-s').textContent = `${d.blocks15m} blocks in 15 min · ${d.transactions1h||0} transfers in 1 h`;
+    el('bps-s').textContent = `${fmt(d.blocks15m)} in the last 15 min`;
+    el('pay').textContent = fmt(d.transactions1h||0);
   }catch(e){}
 }
 async function pollMiners(){
   try{
     const d = await (await fetch(`${API}/info/miners?window=86400`,{cache:'no-store'})).json();
     S.nakamoto = d.nakamotoCoefficient; S.minersN = d.distinctAddresses; updateNet();
-  }catch(e){}
-}
-async function pollReorgs(){
-  // Marks blocks that a reorg pushed off the selected chain. Only source of "red" on this page.
-  try{
-    const d = await (await fetch(`${API}/info/reorgs?window=3600`,{cache:'no-store'})).json();
-    S.reorgsPerHour = d.perHour;
-    for (const ev of d.notable||[]) for (const h of ev.blocks||[]) { const b = S.byHash.get(h); if (b && !b.red) { b.red = true; b.redDepth = ev.depth; } }
   }catch(e){}
 }
 async function pollNodes(){
@@ -305,7 +331,7 @@ async function pollNodes(){
 }
 function updateNet(){
   el('net').textContent = `${S.minersN ?? '–'} · ${S.nodes ?? '–'}`;
-  el('net-s').textContent = `Nakamoto coefficient ${S.nakamoto ?? '–'} · ${S.countries ?? '–'} countries`;
+  el('net-s').textContent = S.nakamoto ? `${S.countries ?? '–'} countries · the ${S.nakamoto} biggest miners hold over half the power` : `${S.countries ?? '–'} countries`;
 }
 
 // ───────────────────────── simulation (offline / sandboxed) ─────────────────────────
@@ -318,87 +344,82 @@ function startSim(reason){
     const sibs = Math.random()<0.18 ? 2 : 1;
     simDaa++; simBlue += sibs;
     for (let k=0;k<sibs;k++){
-      const transfers = Math.random()<0.07 ? [{id:'sim'+Math.random().toString(16).slice(2,10), actions: 2+Math.floor(Math.random()*3)}] : [];
+      const transfers = Math.random()<0.07 ? [{id:'sim'+Math.random().toString(16).slice(2,10), parcels: 2+Math.floor(Math.random()*3)}] : [];
       const mintNotes = 1+Math.floor(Math.random()*3);
-      const b = { hash:'sim'+Math.random().toString(16).slice(2,18), daa:simDaa, blue:simBlue, ts:Date.now(), txCount:1+transfers.length, mintNotes, transfers, others:0 };
-      addBlock(b);
-      if (Math.random()<0.03) { b.red = true; b.redDepth = 1; }
-      simNotes += mintNotes + transfers.reduce((a,t)=>a+t.actions,0);
-      if (transfers.length) simNulls += transfers[0].actions - 1;
+      addBlock({ hash:'sim'+Math.random().toString(16).slice(2,18), daa:simDaa, blue:simBlue, ts:Date.now(), txCount:1+transfers.length, mintNotes, transfers, others:0 });
+      simNotes += mintNotes + transfers.reduce((a,t)=>a+t.parcels,0);
+      if (transfers.length) simNulls += transfers[0].parcels - 1;
       simHeld += 47.62;
     }
     onShielded(simNotes, simNulls, simHeld);
   };
   simTimer = setInterval(tick, 1000); tick();
-  S.bps = 0.99; el('bps').textContent='0.99'; el('bps-s').textContent='890 blocks in 15 min · simulated';
+  S.bps = 0.99; el('bps').textContent='0.99'; el('bps-s').textContent='simulated'; el('pay').textContent='3,700';
   S.nakamoto = 2; S.minersN = 27; S.nodes = 38; S.countries = 14; updateNet();
 }
 function stopSim(){
   clearInterval(simTimer); simTimer = null; S.sim = false; failures = 0;
   S.blocks = []; S.byHash.clear(); S.known.clear(); S.notes = []; S.bubbles = []; S.ripples = []; S.labels = []; S.drops = [];
   S.seenFirstPoll = false; S.notesBase = null; S.nullBase = null; S.noteCount = null; S.nullCount = null;
-  pollShielded(); pollPulse(); pollMiners(); pollNodes(); pollReorgs();
+  pollShielded(); pollPulse(); pollMiners(); pollNodes();
 }
 
 // ───────────────────────── particles ─────────────────────────
 function dropNotes(b){
   b.dropped = true;
   const y = LANE_Y - b.lane*LANE_GAP;
-  for (let i=0;i<b.mintNotes;i++) S.notes.push({ x:b.x + (i-(b.mintNotes-1)/2)*9, y:y-CRATE/2-4, vx:(Math.random()-.5)*14, vy:10+Math.random()*30, kind:'note', t:0, trail:[] });
-  for (const tr of b.transfers) S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:0, vy:8, kind:'env', actions:tr.actions, id:tr.id, t:0, trail:[] });
+  for (let i=0;i<b.mintNotes;i++) S.notes.push({ x:b.x + (i-(b.mintNotes-1)/2)*9, y:y-CRATE/2-4, vx:(Math.random()-.5)*16, vy:10+Math.random()*30, kind:'note', t:0, trail:[], land: LAND_Y + (Math.random()-.5)*PRY*0.3 });
+  for (const tr of b.transfers) S.notes.push({ x:b.x, y:y-CRATE/2-28, vx:0, vy:8, kind:'env', parcels:tr.parcels, id:tr.id, t:0, trail:[], land: LAND_Y });
 }
 function splash(x, y, big){
   const n = big ? 16 : 7;
-  for (let i=0;i<n;i++){ const a = -Math.PI/2 + (Math.random()-.5)*1.6; const v = (big?90:55)*(0.5+Math.random()); S.drops.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, t:0, life:0.5+Math.random()*0.4 }); }
+  for (let i=0;i<n;i++){ const a = -Math.PI/2 + (Math.random()-.5)*1.6; const v = (big?90:55)*(0.5+Math.random()); S.drops.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, t:0, life:0.5+Math.random()*0.4, floor:y }); }
   S.ripples.push({ x, y, t:0, big });
 }
 function spawnBubbles(n){
-  for (let i=0;i<n;i++) S.bubbles.push({ x: 60 + Math.random()*(W-120), y: H+10, r: 3.5+Math.random()*3.5, v: 24+Math.random()*22, t:0, wob: Math.random()*6.28 });
-  S.labels.push({ text: n===1 ? 'a note was spent — which one is unknowable' : `${n} notes were spent — which ones is unknowable`, x: W*0.55, y: POOL_Y-16, t:0, life:4 });
+  for (let i=0;i<n;i++){
+    const r = Math.sqrt(Math.random())*0.85, a = Math.random()*TAU;
+    S.bubbles.push({ x: PCX + Math.cos(a)*r*PRX, y: PCY + Math.abs(Math.sin(a))*r*PRY*0.9 + PRY*0.05, r: 2.5+Math.random()*2.5, t:0, life: 1.3+Math.random()*0.8, wob: Math.random()*TAU });
+  }
+  S.labels.push({ text: n===1 ? 'someone spent a parcel — which one, nobody can tell' : `${n} parcels were spent — which ones, nobody can tell`, x: PCX, y: PCY - PRY - 22, t:0, life:4 });
 }
 
 // ───────────────────────── drawing primitives ─────────────────────────
 function roundRect(x,y,w,h,r){ cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
 function drawCrate(x,y,opts={}){
-  const s = CRATE, d = DEPTH, red = !!opts.red, dim = opts.dim ? .6 : 1;
+  const s = CRATE, d = DEPTH, dim = opts.dim ? .6 : 1;
   const L = x-s/2, R = x+s/2, T = y-s/2, B = y+s/2;
   cx.save();
-  if (opts.glow){ cx.shadowColor = hexA(red?C.ember:C.teal,.8); cx.shadowBlur = 22; }
-  // top face
+  if (opts.glow){ cx.shadowColor = hexA(C.teal,.8); cx.shadowBlur = 22; }
   cx.beginPath(); cx.moveTo(L,T); cx.lineTo(L+d,T-d); cx.lineTo(R+d,T-d); cx.lineTo(R,T); cx.closePath();
-  cx.fillStyle = red ? 'rgba(20,14,14,.95)' : hexA(C.tealBright, .72*dim); cx.fill();
-  // right face
+  cx.fillStyle = hexA(C.tealBright, .72*dim); cx.fill();
   cx.beginPath(); cx.moveTo(R,T); cx.lineTo(R+d,T-d); cx.lineTo(R+d,B-d); cx.lineTo(R,B); cx.closePath();
-  cx.fillStyle = red ? 'rgba(14,10,10,.95)' : hexA(C.tealDeep, .95*dim); cx.fill();
-  // front face
+  cx.fillStyle = hexA(C.tealDeep, .95*dim); cx.fill();
   const g = cx.createLinearGradient(L,T,L,B); g.addColorStop(0, hexA(C.teal,.92*dim)); g.addColorStop(1, hexA(C.teal,.62*dim));
-  cx.fillStyle = red ? 'rgba(11,11,15,.95)' : g; cx.fillRect(L,T,s,s);
+  cx.fillStyle = g; cx.fillRect(L,T,s,s);
   cx.shadowBlur = 0;
-  // edges
-  cx.lineWidth = 1.2; cx.strokeStyle = red ? C.ember : hexA(C.tealBright,.9*dim);
+  cx.lineWidth = 1.2; cx.strokeStyle = hexA(C.tealBright,.9*dim);
   cx.strokeRect(L+.5,T+.5,s-1,s-1);
   cx.beginPath(); cx.moveTo(L,T); cx.lineTo(L+d,T-d); cx.lineTo(R+d,T-d); cx.lineTo(R+d,B-d); cx.lineTo(R,B); cx.stroke();
   cx.beginPath(); cx.moveTo(R,T); cx.lineTo(R+d,T-d); cx.stroke();
-  // seal mark on the front
-  cx.strokeStyle = red ? hexA(C.ember,.7) : 'rgba(11,11,15,.55)'; cx.lineWidth = 1.4;
-  cx.beginPath(); cx.arc(x, y+2, 7, 0, 6.283); cx.stroke();
+  cx.strokeStyle = 'rgba(11,11,15,.55)'; cx.lineWidth = 1.4;
+  cx.beginPath(); cx.arc(x, y+2, 7, 0, TAU); cx.stroke();
   cx.beginPath(); cx.moveTo(x-3.5,y+2); cx.lineTo(x-1,y+4.5); cx.lineTo(x+4,y-1); cx.stroke();
-  if (red){ cx.strokeStyle = C.ember; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(L+6,T+6); cx.lineTo(R-6,B-6); cx.stroke(); }
   cx.restore();
 }
-function drawCapsule(x,y,scale=1,alpha=1,bright=true){
+function drawCapsule(x,y,scale=1,alpha=1){
   cx.save(); cx.translate(x,y); cx.scale(scale,scale);
-  roundRect(-6,-3.5,12,7,3.5); cx.fillStyle = hexA(bright?C.tealBright:C.teal, alpha); cx.fill();
+  roundRect(-6,-3.5,12,7,3.5); cx.fillStyle = hexA(C.tealBright, alpha); cx.fill();
   cx.strokeStyle = `rgba(11,11,15,${.6*alpha})`; cx.lineWidth=1; cx.stroke();
   cx.restore();
 }
-function drawEnvelope(x,y,actions,pulse,alpha=1){
+function drawEnvelope(x,y,parcels,pulse,alpha=1){
   cx.save(); cx.translate(x,y); cx.globalAlpha = alpha;
   cx.shadowColor = hexA(C.tealBright,.9); cx.shadowBlur = 14+10*pulse;
   roundRect(-14,-9,28,18,3); cx.fillStyle=C.surface; cx.fill(); cx.strokeStyle=C.tealBright; cx.lineWidth=1.6; cx.stroke();
   cx.beginPath(); cx.moveTo(-14,-9); cx.lineTo(0,3); cx.lineTo(14,-9); cx.stroke();
   cx.shadowBlur=0; cx.fillStyle=C.tealBright; cx.font=`500 10px ${MONO()}`; cx.textAlign='center';
-  cx.fillText(actions+' actions', 0, 23);
+  cx.fillText('payment · '+parcels+' parcels', 0, 23);
   cx.restore();
 }
 function drawGuideIcons(){
@@ -406,10 +427,10 @@ function drawGuideIcons(){
     const g=c.getContext('2d'); c.width=52; c.height=52; g.setTransform(2,0,0,2,0,0);
     const kind=c.dataset.icon;
     if (kind==='crate'){ g.fillStyle=hexA(C.tealBright,.7); g.beginPath(); g.moveTo(4,8); g.lineTo(9,3); g.lineTo(25,3); g.lineTo(20,8); g.closePath(); g.fill(); g.fillStyle=hexA(C.tealDeep,.95); g.beginPath(); g.moveTo(20,8); g.lineTo(25,3); g.lineTo(25,19); g.lineTo(20,24); g.closePath(); g.fill(); g.fillStyle=hexA(C.teal,.85); g.fillRect(4,8,16,16); }
-    if (kind==='lanes'){ g.fillStyle=hexA(C.teal,.85); rr(g,4,2,18,10,3); g.fill(); g.strokeStyle=C.ember; g.lineWidth=1.3; rr(g,4,15,18,10,3); g.stroke(); g.beginPath(); g.moveTo(7,18); g.lineTo(19,22); g.stroke(); }
+    if (kind==='lanes'){ g.fillStyle=hexA(C.teal,.85); rr(g,4,2,18,10,3); g.fill(); g.fillStyle=hexA(C.teal,.55); rr(g,4,15,18,10,3); g.fill(); }
     if (kind==='note'){ [0,1,2].forEach(i=>{ g.fillStyle=C.tealBright; rr(g,3+i*6,10+((i%2)*4),10,6,3); g.fill(); }); }
     if (kind==='env'){ g.strokeStyle=C.tealBright; g.lineWidth=1.5; g.fillStyle=C.surface; rr(g,3,7,20,13,2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(3,7); g.lineTo(13,15); g.lineTo(23,7); g.stroke(); }
-    if (kind==='pool'){ const grd=g.createLinearGradient(0,10,0,26); grd.addColorStop(0,hexA(C.teal,.6)); grd.addColorStop(1,hexA(C.tealDeep,.2)); g.fillStyle=grd; g.beginPath(); g.moveTo(0,14); for(let x=0;x<=26;x+=2) g.lineTo(x,13+Math.sin(x/3)*1.5); g.lineTo(26,26); g.lineTo(0,26); g.closePath(); g.fill(); g.strokeStyle='rgba(126,247,228,.9)'; g.beginPath(); g.arc(18,8,2.5,0,7); g.stroke(); }
+    if (kind==='pool'){ const grd=g.createRadialGradient(13,15,2,13,15,13); grd.addColorStop(0,hexA(C.teal,.7)); grd.addColorStop(1,hexA(C.tealDeep,.3)); g.fillStyle=grd; g.beginPath(); g.ellipse(13,15,12,7,0,0,TAU); g.fill(); g.strokeStyle=hexA(C.tealBright,.8); g.lineWidth=1; g.stroke(); g.beginPath(); g.arc(16,12,2.2,0,TAU); g.stroke(); }
   });
   function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
 }
@@ -417,58 +438,73 @@ drawGuideIcons();
 
 // ───────────────────────── frame ─────────────────────────
 let last = now();
-const surfAt = (x,t) => POOL_Y + Math.sin(x/90 + t*1.0)*2.6 + Math.sin(x/31 - t*1.6)*1.2;
 function frame(){
   const t = now(), dt = Math.min(0.05, t-last); last = t;
   cx.clearRect(0,0,W,H);
 
-  // ── sky: ember glow (explorer ambience) + faint dot grid so the space reads as a floor
+  // ── floor: ember glow (explorer ambience) + faint dot grid
   const g = cx.createRadialGradient(W*0.82,-H*0.05,0,W*0.82,-H*0.05,W*0.7);
   g.addColorStop(0,'rgba(255,107,53,.10)'); g.addColorStop(1,'rgba(255,107,53,0)');
-  cx.fillStyle=g; cx.fillRect(0,0,W,POOL_Y);
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
   cx.fillStyle='rgba(246,246,248,.045)';
-  for (let x=(W%40)/2; x<W; x+=40) for (let y=40; y<POOL_Y-10; y+=40) cx.fillRect(x,y,1,1);
+  for (let x=(W%40)/2; x<W; x+=40) for (let y=40; y<H-60; y+=40) cx.fillRect(x,y,1,1);
 
-  // ── pool body
-  const pg = cx.createLinearGradient(0,POOL_Y,0,H);
-  pg.addColorStop(0, hexA(C.teal,.30)); pg.addColorStop(.18, hexA(C.tealDeep,.42)); pg.addColorStop(1, 'rgba(7,40,38,.55)');
-  cx.beginPath(); cx.moveTo(0,surfAt(0,t));
-  for (let x=6;x<=W+6;x+=6) cx.lineTo(x,surfAt(x,t));
-  cx.lineTo(W,H); cx.lineTo(0,H); cx.closePath(); cx.fillStyle=pg; cx.fill();
-  // caustic light
+  // ── the pool: a round basin seen from above
+  // outer glow + basin wall
+  cx.save(); cx.shadowColor = hexA(C.teal,.35); cx.shadowBlur = 60;
+  cx.beginPath(); cx.ellipse(PCX,PCY+14,PRX+6,PRY+6,0,0,TAU); cx.fillStyle='#0d1a19'; cx.fill(); cx.restore();
+  cx.beginPath(); cx.ellipse(PCX,PCY+14,PRX+6,PRY+6,0,0,TAU); cx.fillStyle='#0f1f1e'; cx.fill();
+  cx.strokeStyle = hexA(C.teal,.25); cx.lineWidth = 1; cx.stroke();
+  // water
+  const wg = cx.createRadialGradient(PCX, PCY-PRY*0.2, PRX*0.1, PCX, PCY, PRX);
+  wg.addColorStop(0, hexA(C.teal,.34)); wg.addColorStop(.6, hexA(C.tealDeep,.55)); wg.addColorStop(1, 'rgba(8,52,49,.95)');
+  cx.beginPath(); cx.ellipse(PCX,PCY,PRX,PRY,0,0,TAU); cx.fillStyle = wg; cx.fill();
+  cx.save(); clipPool();
   if (!REDUCED){
-    cx.save(); cx.globalCompositeOperation='lighter';
+    cx.globalCompositeOperation='lighter';
     for (let i=0;i<3;i++){
-      const cxp = W*(0.2+0.3*i) + Math.sin(t*0.35+i*2)*W*0.12, cyp = POOL_Y + 40 + Math.cos(t*0.27+i)*30;
-      const cg = cx.createRadialGradient(cxp,cyp,0,cxp,cyp,Math.max(220, W*0.22));
-      cg.addColorStop(0, hexA(C.teal,.10)); cg.addColorStop(1,'rgba(0,0,0,0)');
-      cx.fillStyle=cg; cx.fillRect(0,POOL_Y,W,H-POOL_Y);
+      const cxp = PCX + Math.sin(t*0.35+i*2.1)*PRX*0.5, cyp = PCY + Math.cos(t*0.27+i)*PRY*0.5;
+      const cg = cx.createRadialGradient(cxp,cyp,0,cxp,cyp,PRX*0.55);
+      cg.addColorStop(0, hexA(C.teal,.11)); cg.addColorStop(1,'rgba(0,0,0,0)');
+      cx.fillStyle=cg; cx.fillRect(PCX-PRX,PCY-PRY,PRX*2,PRY*2);
     }
-    cx.restore();
+    cx.globalCompositeOperation='source-over';
   }
-  // standing field of sealed notes
+  // standing field of sealed parcels
   for (const f of S.field){
-    const dx = REDUCED ? 0 : Math.sin(t*f.sp + f.ph)*6;
-    const a = 0.10 + f.d*0.30;
-    cx.fillStyle = hexA(f.d>0.5?C.tealBright:C.teal, a);
-    cx.beginPath(); cx.ellipse(f.x+dx, f.y, 5*f.s, 2.6*f.s, 0, 0, 6.283); cx.fill();
+    const dx = REDUCED ? 0 : Math.sin(t*f.sp + f.ph)*5;
+    const a = 0.14 + (1-f.d)*0.28;
+    cx.fillStyle = hexA(f.d<0.5?C.tealBright:C.teal, a);
+    cx.beginPath(); cx.ellipse(f.x+dx, f.y, 5*f.s, 2.6*f.s, 0, 0, TAU); cx.fill();
   }
-  // the pool's headline number, as a watermark on the water
+  // the pool's headline number
   const target = S.noteCount==null ? 0 : S.noteCount;
   S.noteShown = S.noteShown ? lerp(S.noteShown, Math.max(S.noteShown, target), dt*2) : target;
   if (target){
-    const size = Math.min(NARROW ? W/7 : W/11, 128);
+    const size = Math.min(PRX/3.4, 96);
     cx.font = `500 ${size}px ${MONO()}`; cx.textAlign='center'; cx.textBaseline='middle';
-    cx.fillStyle = hexA(C.tealBright,.085); cx.fillText(fmt(S.noteShown), W/2, POOL_Y + (H-POOL_Y)*0.52);
-    cx.font = `500 ${Math.max(11, size*0.14)}px ${FONT()}`; cx.fillStyle = hexA(C.tealBright,.35);
-    cx.fillText('SEALED NOTES IN THE POOL', W/2, POOL_Y + (H-POOL_Y)*0.52 + size*0.62);
+    cx.fillStyle = 'rgba(11,11,15,.35)'; cx.fillText(fmt(S.noteShown), PCX, PCY+2);
+    cx.fillStyle = hexA(C.tealBright,.9); cx.fillText(fmt(S.noteShown), PCX, PCY);
+    cx.font = `500 ${Math.max(10, size*0.15)}px ${FONT()}`; cx.fillStyle = hexA(C.tealBright,.6);
+    cx.fillText('SEALED PARCELS OF COINS', PCX, PCY + size*0.62);
+    cx.fillStyle = hexA(C.tealBright,.35); cx.fillText('nobody can see inside', PCX, PCY + size*0.62 + Math.max(10,size*0.15)*1.5);
     cx.textBaseline='alphabetic';
   }
-  // surface line
-  cx.strokeStyle = hexA(C.tealBright,.5); cx.lineWidth=1.2; cx.beginPath();
-  for (let x=0;x<=W+6;x+=6){ const y=surfAt(x,t); x?cx.lineTo(x,y):cx.moveTo(x,y); } cx.stroke();
-  cx.strokeStyle = hexA(C.tealBright,.12); cx.beginPath();
-  for (let x=0;x<=W+6;x+=6){ const y=surfAt(x,t)+7; x?cx.lineTo(x,y):cx.moveTo(x,y); } cx.stroke();
+  // ripples (inside the pool)
+  for (const r of S.ripples){
+    r.t += dt; const life = r.big?1.8:1.0; const k=r.t/life;
+    cx.strokeStyle = hexA(C.tealBright, (1-k)*(r.big?.95:.6)); cx.lineWidth = r.big?1.6:1;
+    cx.beginPath(); cx.ellipse(r.x, r.y, 6+k*(r.big?110:40), 3+k*(r.big?40:14), 0, 0, TAU); cx.stroke();
+    if (r.big){ cx.strokeStyle = hexA(C.tealBright,(1-k)*.4); cx.beginPath(); cx.ellipse(r.x, r.y, 3+k*60, 1.5+k*22, 0, 0, TAU); cx.stroke(); }
+    if (k>=1) r.dead=true;
+  }
+  S.ripples = S.ripples.filter(r=>!r.dead);
+  cx.restore();
+  // rim
+  cx.beginPath(); cx.ellipse(PCX,PCY,PRX,PRY,0,0,TAU); cx.strokeStyle = hexA(C.tealBright,.75); cx.lineWidth = 1.6; cx.stroke();
+  cx.beginPath(); cx.ellipse(PCX,PCY,PRX-8,PRY-5,0,0,TAU); cx.strokeStyle = hexA(C.tealBright,.14); cx.lineWidth = 1; cx.stroke();
+  cx.fillStyle = C.muted; cx.font=`500 10.5px ${FONT()}`; cx.textAlign='center';
+  if (!NARROW) cx.fillText('THE SHIELDED POOL', PCX, PCY + PRY + 26);
 
   // ── conveyor rail with second-ticks that move with the blocks
   const railY = LANE_Y + CRATE/2 + 10;
@@ -477,10 +513,10 @@ function frame(){
   const off = ((-(t*SPEED)) % SPEED + SPEED) % SPEED;
   cx.strokeStyle = hexA(C.ink,.22);
   for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
-  cx.fillStyle = C.muted; cx.font=`500 10.5px ${FONT()}`; cx.textAlign='right';
+  cx.fillStyle = C.muted; cx.textAlign='right';
   cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
-  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NOTES DROP HERE', DROP_X, POOL_Y-14);
-  cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(DROP_X, railY+26); cx.lineTo(DROP_X, POOL_Y-26); cx.stroke(); cx.setLineDash([]);
+  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW COINS DROP IN HERE', PCX, PCY - PRY - 10);
+  cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(PCX, railY+26); cx.lineTo(PCX, PCY - PRY - 24); cx.stroke(); cx.setLineDash([]);
 
   // ── blocks: positions, threads, crates
   for (const b of S.blocks) b.x = W + CRATE - (t - b.born)*SPEED;
@@ -490,7 +526,7 @@ function frame(){
     const y = LANE_Y - b.lane*LANE_GAP;
     for (const p of prevTick(b)){
       const py = LANE_Y - p.lane*LANE_GAP;
-      cx.strokeStyle = (b.red || p.red) ? hexA(C.ember,.35) : hexA(C.tealBright,.45);
+      cx.strokeStyle = hexA(C.tealBright,.45);
       cx.beginPath(); cx.moveTo(b.x-CRATE/2, y); cx.bezierCurveTo(b.x-CRATE*1.1, y, p.x+DEPTH+CRATE*1.1, py, p.x+CRATE/2+DEPTH, py); cx.stroke();
     }
   }
@@ -498,61 +534,56 @@ function frame(){
   for (const b of S.blocks){
     const y = LANE_Y - b.lane*LANE_GAP;
     if (b.x < -CRATE) continue;
-    const fresh = t-b.born < 0.7;
-    drawCrate(b.x, y, { glow: fresh, red: !!b.red, dim: b.lane>0 });
-    if (b.lane===0){ cx.fillStyle = hexA(C.muted,.8); cx.fillText(String(b.daa).slice(-4), b.x, railY+16); }
+    const fade = FADE_X ? Math.max(0, Math.min(1, (b.x - FADE_X + 40)/80)) : 1;
+    if (fade <= 0) continue;
+    cx.globalAlpha = fade;
+    drawCrate(b.x, y, { glow: t-b.born < 0.7, dim: b.lane>0 });
+    if (b.lane===0){ cx.fillStyle = hexA(C.muted,.8); cx.fillText('#'+String(b.daa).slice(-5), b.x, railY+16); }
+    cx.globalAlpha = 1;
     if (!b.dropped){
       for (let i=0;i<b.mintNotes;i++) drawCapsule(b.x + (i-(b.mintNotes-1)/2)*9 + DEPTH/2, y-CRATE/2-DEPTH/2-1, .9);
-      b.transfers.forEach((tr,i) => drawEnvelope(b.x+DEPTH/2, y-CRATE/2-DEPTH-22-i*30, tr.actions, .5+.5*Math.sin(t*4)));
-      if (b.x <= DROP_X) dropNotes(b);
+      b.transfers.forEach((tr,i) => drawEnvelope(b.x+DEPTH/2, y-CRATE/2-DEPTH-22-i*30, tr.parcels, .5+.5*Math.sin(t*4)));
+      if (b.x <= PCX) dropNotes(b);
     }
   }
 
-  // ── falling notes / envelopes
+  // ── falling parcels / envelopes
   for (const n of S.notes){
     n.t += dt;
     if (!n.sunk){
       n.vy += 260*dt; n.x += n.vx*dt; n.y += n.vy*dt;
       n.trail.push({x:n.x,y:n.y}); if (n.trail.length>7) n.trail.shift();
-      for (let i=0;i<n.trail.length;i++){ const p=n.trail[i]; cx.fillStyle = hexA(C.tealBright, .06+i*.05); cx.beginPath(); cx.arc(p.x,p.y, n.kind==='env'?5:3, 0, 6.283); cx.fill(); }
-      if (n.kind==='env') drawEnvelope(n.x, n.y, n.actions, 1); else drawCapsule(n.x, n.y, 1);
-      const sy = surfAt(n.x,t);
-      if (n.y >= sy){
-        n.sunk = true; n.st = 0; n.y = sy; splash(n.x, sy, n.kind==='env');
-        S.noteShown += n.kind==='env' ? n.actions : 1;
-        if (n.kind==='env') S.labels.push({ text:`sealed transfer · ${n.actions} actions · amount, sender, receiver: hidden`, x:n.x, y:sy-26, t:0, life:3.4 });
+      for (let i=0;i<n.trail.length;i++){ const p=n.trail[i]; cx.fillStyle = hexA(C.tealBright, .06+i*.05); cx.beginPath(); cx.arc(p.x,p.y, n.kind==='env'?5:3, 0, TAU); cx.fill(); }
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 1); else drawCapsule(n.x, n.y, 1);
+      if (n.y >= n.land){
+        n.sunk = true; n.st = 0; n.y = n.land; splash(n.x, n.land, n.kind==='env');
+        S.noteShown += n.kind==='env' ? n.parcels : 1;
+        if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} parcels moved · who and how much: hidden`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
       }
     } else {
-      n.st += dt; n.y += 14*dt; const a = Math.max(0, 1 - n.st/1.6);
-      if (n.kind==='env') drawEnvelope(n.x, n.y, n.actions, 0, a*0.9); else drawCapsule(n.x, n.y, 1, a);
-      if (n.st >= 1.6) n.dead = true;
+      n.st += dt; n.y += 10*dt; const a = Math.max(0, 1 - n.st/1.4);
+      if (n.kind==='env') drawEnvelope(n.x, n.y, n.parcels, 0, a*0.9); else drawCapsule(n.x, n.y, 1, a);
+      if (n.st >= 1.4) n.dead = true;
     }
   }
   S.notes = S.notes.filter(n=>!n.dead);
-  // splash droplets
   for (const d of S.drops){
     d.t += dt; d.vy += 300*dt; d.x += d.vx*dt; d.y += d.vy*dt;
-    cx.fillStyle = hexA(C.tealBright, Math.max(0, 1-d.t/d.life)*.9); cx.beginPath(); cx.arc(d.x,d.y,1.8,0,6.283); cx.fill();
-    if (d.t>=d.life || d.y>surfAt(d.x,t)+4) d.dead = true;
+    cx.fillStyle = hexA(C.tealBright, Math.max(0, 1-d.t/d.life)*.9); cx.beginPath(); cx.arc(d.x,d.y,1.8,0,TAU); cx.fill();
+    if (d.t>=d.life || d.y>d.floor+4) d.dead = true;
   }
   S.drops = S.drops.filter(d=>!d.dead);
-  for (const r of S.ripples){
-    r.t += dt; const life = r.big?1.8:1.0; const k=r.t/life;
-    cx.strokeStyle = hexA(C.tealBright, (1-k)*(r.big?.95:.6)); cx.lineWidth = r.big?1.6:1;
-    cx.beginPath(); cx.ellipse(r.x, r.y, 6+k*(r.big?90:36), 2.5+k*(r.big?16:7), 0, 0, 6.283); cx.stroke();
-    if (r.big){ cx.strokeStyle = hexA(C.tealBright,(1-k)*.4); cx.beginPath(); cx.ellipse(r.x, r.y, 3+k*50, 1.5+k*9, 0, 0, 6.283); cx.stroke(); }
-    if (k>=1) r.dead=true;
-  }
-  S.ripples = S.ripples.filter(r=>!r.dead);
 
-  // ── bubbles (spends)
+  // ── bubbles: a parcel somewhere was spent
   for (const u of S.bubbles){
-    u.t += dt; u.y -= u.v*dt; u.x += Math.sin(u.t*2.5+u.wob)*10*dt;
+    u.t += dt; const k = u.t/u.life;
+    u.y -= 26*dt; u.x += Math.sin(u.t*2.5+u.wob)*10*dt;
+    const r = u.r*(0.6+k*0.9), a = k<0.85 ? .85 : .85*(1-(k-.85)/.15);
     cx.save(); cx.shadowColor = hexA(C.tealBright,.9); cx.shadowBlur = 8;
-    cx.strokeStyle = hexA(C.tealBright,.85); cx.lineWidth=1.2; cx.beginPath(); cx.arc(u.x,u.y,u.r,0,6.283); cx.stroke();
-    cx.fillStyle = hexA(C.tealBright,.35); cx.beginPath(); cx.arc(u.x-u.r*.35,u.y-u.r*.35,u.r*.28,0,6.283); cx.fill();
+    cx.strokeStyle = hexA(C.tealBright,a); cx.lineWidth=1.2; cx.beginPath(); cx.arc(u.x,u.y,r,0,TAU); cx.stroke();
+    cx.fillStyle = hexA(C.tealBright,a*.4); cx.beginPath(); cx.arc(u.x-r*.35,u.y-r*.35,r*.28,0,TAU); cx.fill();
     cx.restore();
-    if (u.y <= surfAt(u.x,t)+2){ u.dead=true; S.ripples.push({x:u.x,y:surfAt(u.x,t),t:0,big:false}); for (let i=0;i<4;i++) S.drops.push({x:u.x,y:u.y,vx:(Math.random()-.5)*60,vy:-40-Math.random()*40,t:0,life:.4}); }
+    if (k>=1){ u.dead=true; S.ripples.push({x:u.x,y:u.y,t:0,big:false}); }
   }
   S.bubbles = S.bubbles.filter(u=>!u.dead);
 
@@ -562,26 +593,28 @@ function frame(){
     l.t += dt; const a = Math.min(1, l.t*4) * Math.max(0, Math.min(1, (l.life-l.t)/0.8));
     const x = Math.min(W-200, Math.max(200, l.x)), y = l.y - l.t*6;
     const w = cx.measureText(l.text).width + 20;
-    cx.fillStyle = `rgba(11,11,15,${.85*a})`; roundRect(x-w/2, y-14, w, 22, 6); cx.fill();
-    cx.strokeStyle = hexA(C.tealBright,.35*a); cx.lineWidth=1; cx.stroke();
+    cx.fillStyle = `rgba(11,11,15,${.88*a})`; roundRect(x-w/2, y-14, w, 22, 6); cx.fill();
+    cx.strokeStyle = hexA(C.tealBright,.4*a); cx.lineWidth=1; cx.stroke();
     cx.fillStyle = hexA(C.tealBright, a); cx.fillText(l.text, x, y+1);
     if (l.t >= l.life) l.dead = true;
   }
   S.labels = S.labels.filter(l=>!l.dead);
 
-  // bottom fade so the legend stays legible over the field
-  const fg = cx.createLinearGradient(0,H-90,0,H); fg.addColorStop(0,'rgba(11,11,15,0)'); fg.addColorStop(1,'rgba(11,11,15,.9)');
-  cx.fillStyle = fg; cx.fillRect(0,H-90,W,90);
+  // bottom fade so the legend stays legible
+  const fg = cx.createLinearGradient(0,H-70,0,H); fg.addColorStop(0,'rgba(11,11,15,0)'); fg.addColorStop(1,'rgba(11,11,15,.9)');
+  cx.fillStyle = fg; cx.fillRect(0,H-70,W,70);
 
   hoverPick();
   requestAnimationFrame(frame);
 }
 
-// ───────────────────────── hover / click ─────────────────────────
+// ───────────────────────── hover / click / help ─────────────────────────
 const tip = el('tip'); let mouse = {x:-1,y:-1};
 cv.addEventListener('mousemove', e => { mouse = {x:e.clientX, y:e.clientY}; });
 cv.addEventListener('mouseleave', () => { mouse = {x:-1,y:-1}; });
 cv.addEventListener('click', () => { if (S.hover && !S.sim) open(`https://explorer.zkas.info/blocks/${S.hover.hash}`,'_blank','noopener'); });
+el('help').addEventListener('click', () => el('guide').classList.toggle('open'));
+el('close').addEventListener('click', () => el('guide').classList.remove('open'));
 function hoverPick(){
   let hit=null;
   for (const b of S.blocks){ const y = LANE_Y - b.lane*LANE_GAP; if (mouse.x>=b.x-CRATE/2-2 && mouse.x<=b.x+CRATE/2+DEPTH+2 && mouse.y>=y-CRATE/2-DEPTH-2 && mouse.y<=y+CRATE/2+2) hit=b; }
@@ -589,10 +622,10 @@ function hoverPick(){
   if (!hit){ tip.classList.remove('on'); return; }
   const age = Math.max(0, Math.round((Date.now()-hit.ts)/1000));
   const sibs = S.blocks.filter(o=>o.daa===hit.daa).length;
-  const status = hit.red ? `orphaned by a depth-${hit.redDepth||1} reorg` : sibs>1 ? `one of ${sibs} siblings this tick — all kept by the DAG` : 'sole block this tick';
-  tip.innerHTML = `<div class="h">Block ${hit.hash.slice(0,10)}…</div>
-    <div class="m">DAA ${fmt(hit.daa)} · blue ${fmt(hit.blue)} · ${age}s ago</div>
-    <div>${hit.mintNotes} minted note${hit.mintNotes===1?'':'s'}${hit.transfers.length?` · ${hit.transfers.length} sealed transfer${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other tx`:''}</div>
+  const status = sibs>1 ? `one of ${sibs} blocks found in the same second — all kept` : 'confirmed';
+  tip.innerHTML = `<div class="h">Block #${fmt(hit.daa)}</div>
+    <div class="m">${hit.hash.slice(0,12)}… · ${age}s ago</div>
+    <div>${hit.mintNotes} parcel${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
     <div class="m">${status}</div>
     <div class="no">${S.sim?'simulated block':'click to open in explorer'}</div>`;
   tip.style.left = Math.min(W-280, mouse.x+14)+'px'; tip.style.top = Math.min(H-120, mouse.y+14)+'px';
@@ -603,14 +636,13 @@ function hoverPick(){
 renderLegend();
 if (FORCE_SIM) startSim('forced with ?sim');
 else {
-  pollBlocks(); pollShielded(); pollPulse(); pollMiners(); pollNodes(); pollReorgs();
+  pollBlocks(); pollShielded(); pollPulse(); pollMiners(); pollNodes();
   let simTicks = 0;
   setInterval(() => { if (!S.sim) pollBlocks(); else if (++simTicks % 5 === 0) pollBlocks(); }, 1000);  // in sim, keep probing every 5 s
   setInterval(() => { if (!S.sim) pollShielded(); }, 10000);
   setInterval(() => { if (!S.sim) pollPulse(); }, 15000);
   setInterval(() => { if (!S.sim) pollMiners(); }, 60000);
   setInterval(() => { if (!S.sim) pollNodes(); }, 30000);
-  setInterval(() => { if (!S.sim) pollReorgs(); }, 30000);
 }
 requestAnimationFrame(frame);
 window.__pool = S;   // read-only debug handle; nothing on this page is secret
