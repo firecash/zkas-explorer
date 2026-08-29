@@ -35,7 +35,7 @@
   @keyframes blink{50%{opacity:.35}}
 
   /* left column: the numbers */
-  .stats{top:66px;left:22px;display:grid;gap:10px;width:214px}
+  .stats{top:66px;left:22px;display:grid;gap:10px;width:214px}   /* top is re-measured in JS */
   .stat{background:rgba(22,22,29,.82);border:1px solid var(--grid);border-radius:14px;padding:10px 13px;backdrop-filter:blur(6px)}
   .stat .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
   .stat .v{font:500 22px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:3px;color:var(--ink)}
@@ -43,8 +43,8 @@
   .stat .s{font-size:11.5px;color:var(--muted);margin-top:2px}
   .stat .delta{color:var(--teal-bright);font:500 11px var(--mono)}
 
-  /* right column: what am I looking at */
-  .guide{top:66px;right:22px;width:280px;background:rgba(22,22,29,.86);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
+  /* right column: what am I looking at — sits over the calm pool, clear of the arrival lane */
+  .guide{bottom:52px;right:22px;width:280px;background:rgba(22,22,29,.86);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
   .guide h2{margin:0 0 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
   .guide ol{margin:0;padding:0;list-style:none;display:grid;gap:9px}
   .guide li{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;color:var(--ink-2);font-size:12.5px;line-height:1.4}
@@ -76,8 +76,14 @@
     .stat .v{font-size:18px}
   }
   @media (max-width:600px){
-    .stats{grid-template-columns:1fr 1fr;width:calc(100vw - 44px)}
+    .brand{flex-wrap:wrap;gap:8px;right:22px}
+    .brand h1 small{display:block;margin:2px 0 0}
+    .pill{font-size:10px;padding:5px 8px}
+    .stats{grid-template-columns:1fr 1fr;width:calc(100vw - 44px);gap:8px}
+    .stat{padding:8px 10px}
+    .stat .s{display:none}
     .caption .src{display:none}
+    .caption .leg{gap:10px}
   }
   @media (prefers-reduced-motion:reduce){ .pill.live::before{animation:none} }
 </style>
@@ -148,11 +154,18 @@ function resize(){
   DPR = Math.min(devicePixelRatio||1, 2);
   W = innerWidth; H = innerHeight;
   cv.width = W*DPR; cv.height = H*DPR; cx.setTransform(DPR,0,0,DPR,0,0);
-  DROP_X = Math.max(300, W*0.36);
-  POOL_Y = H*0.60;
-  LANE_Y = H*0.31;
+  // Keep the HUD and the animation out of each other's way: stats hang under the brand,
+  // the arrival lane starts below whatever the stats occupy (matters on phones).
+  const brand = document.querySelector('.brand'), stats = document.getElementById('stats');
+  stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
+  const statsBottom = stats.getBoundingClientRect().bottom;
+  const narrow = W < 600;
+  LANE_Y = narrow ? statsBottom + 44 : Math.max(H*0.31, brand.getBoundingClientRect().bottom + 90);
+  POOL_Y = Math.max(H*0.60, LANE_Y + Math.min(220, H*0.28));
+  DROP_X = narrow ? W*0.42 : Math.max(300, W*0.36);
 }
 addEventListener('resize', resize); resize();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
 
 // ───────────────────────── helpers ─────────────────────────
 const now = () => performance.now()/1000;
@@ -489,6 +502,7 @@ else {
 }
 renderLegend();
 requestAnimationFrame(frame);
+window.__pool = S;   // read-only debug handle; nothing on this page is secret
 })();
 </script>
 
