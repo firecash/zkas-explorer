@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Live animation of the ZKAS blockDAG dropping sealed parcels of coins into the shielded pool.">
+<meta name="description" content="Live animation of the ZKAS blockDAG dropping sealed letters of coins into the shielded pool.">
 <meta name="robots" content="noindex">
 <title>Shielded Pool Live</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,19 +44,6 @@
   .stat .s{font-size:11.5px;color:var(--muted);margin-top:1px}
   .stat .delta{color:var(--teal-bright);font:500 11px var(--mono)}
 
-  /* right column: how to read it */
-  .guide{bottom:52px;right:22px;width:284px;background:rgba(22,22,29,.9);border:1px solid var(--grid);border-radius:16px;padding:14px 16px 12px;backdrop-filter:blur(6px)}
-  .guide h2{margin:0 0 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center}
-  .guide h2 button{display:none}
-  .guide ol{margin:0;padding:0;list-style:none;display:grid;gap:9px}
-  .guide li{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;color:var(--ink-2);font-size:12.5px;line-height:1.4}
-  .guide li b{color:var(--ink);font-weight:500}
-  .guide li canvas{width:26px;height:26px;margin-top:-1px}
-  .guide .foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--grid);font-size:11.5px;color:var(--muted)}
-  .guide .foot a{color:var(--teal);text-decoration:none}
-  .guide .foot a:hover{text-decoration:underline}
-  .help{display:none;position:fixed;z-index:4;top:18px;right:22px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(23,214,190,.45);background:rgba(22,22,29,.9);color:var(--teal);font:600 16px var(--font);align-items:center;justify-content:center;cursor:pointer}
-  .help:focus-visible,.guide button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
   .tip{position:fixed;z-index:3;pointer-events:none;background:rgba(11,11,15,.94);border:1px solid var(--grid);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--ink-2);max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
   .tip.on{opacity:1;transform:none}
@@ -64,22 +51,13 @@
   .tip .m{font:11.5px var(--mono);color:var(--muted)}
   .tip .no{color:var(--teal);margin-top:4px}
 
-  .caption{bottom:16px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:11.5px;color:var(--muted)}
-  .caption .leg{display:flex;gap:14px;flex-wrap:wrap}
-  .caption .leg span{display:inline-flex;align-items:center;gap:6px}
-  .caption i{display:inline-block;width:10px;height:10px;border-radius:3px}
-  .caption .src{font:11px var(--mono);white-space:nowrap}
-  .caption .src a{color:var(--muted)}
+  /* bottom bar: the legend IS the explanation */
+  .legend{bottom:0;left:0;right:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 26px;padding:10px 22px 14px;font-size:12px;color:var(--ink-2);background:linear-gradient(rgba(11,11,15,0),rgba(11,11,15,.9) 40%)}
+  .legend span{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .legend b{color:var(--ink);font-weight:500}
+  .legend canvas{width:22px;height:22px;flex:none}
 
-  @media (max-width:900px){
-    .guide{display:none}
-    .guide.open{display:block;left:16px;right:16px;width:auto;bottom:auto;top:50%;transform:translateY(-50%);z-index:5;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-    .guide h2 button{display:inline-block;background:none;border:0;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
-    .help{display:flex}
-    .brand{right:70px}
-    .stats{width:170px}
-    .stat .v{font-size:18px}
-  }
+  @media (max-width:900px){ .stats{width:170px} .stat .v{font-size:18px} }
   @media (max-width:600px){
     .brand{flex-wrap:wrap;gap:8px}
     .brand h1 small{display:block;margin:2px 0 0}
@@ -90,54 +68,45 @@
     .stat{padding:7px 10px}
     .stat .v{font-size:17px}
     .stat .s{display:none}
-    .caption .src{display:none}
-    .caption .leg{gap:10px}
+    .legend{gap:4px 14px;padding:8px 12px 10px;font-size:11px}
   }
+  @media (max-height:780px){ .stats{gap:8px} .grp{gap:5px} .stat{padding:7px 12px} .stat .s{display:none} .stat .v{font-size:19px} }
   @media (prefers-reduced-motion:reduce){ .pill.live::before{animation:none} }
 </style>
 </head>
 <body>
 
 
-<canvas id="stage" aria-label="Live animation of ZKAS blocks dropping sealed parcels of coins into the shielded pool"></canvas>
+<canvas id="stage" aria-label="Live animation of ZKAS blocks dropping sealed letters of coins into the shielded pool"></canvas>
 
 <div class="hud brand">
   <h1>Shielded Pool <small>zkas · live</small></h1>
   <span class="pill" id="status">connecting</span>
 </div>
-<button class="help" id="help" aria-label="How to read this page">?</button>
 
 <div class="hud stats" id="stats">
   <div class="grp"><h3>Right now</h3>
-    <div class="stat"><div class="k"><span>New blocks per second</span></div><div class="v" id="bps">–</div><div class="s" id="bps-s">one every second by design</div></div>
-    <div class="stat"><div class="k"><span>Payments, last hour</span></div><div class="v" id="pay">–</div><div class="s">all private — who, to whom, how much: hidden</div></div>
+    <div class="stat"><div class="k"><span>New blocks per second</span></div><div class="v" id="bps">–</div><div class="s" id="bps-s"></div></div>
+    <div class="stat"><div class="k"><span>Payments, last hour</span></div><div class="v" id="pay">–</div><div class="s">who · to whom · how much: sealed</div></div>
   </div>
   <div class="grp"><h3>Inside the pool</h3>
-    <div class="stat"><div class="k"><span>Sealed parcels</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">every coin lives in one; nobody can see inside</div></div>
-    <div class="stat"><div class="k"><span>ZKAS held</span></div><div class="v" id="held">–</div><div class="s">every coin ever minted went straight in</div></div>
-    <div class="stat"><div class="k"><span>Parcels spent, ever</span><span class="delta" id="spent-d"></span></div><div class="v" id="spent">–</div><div class="s">spending reveals only that <em>some</em> parcel was used</div></div>
+    <div class="stat"><div class="k"><span>Sealed letters</span><span class="delta" id="notes-d"></span></div><div class="v t" id="notes">–</div><div class="s">coins inside · nobody can read them</div></div>
+    <div class="stat"><div class="k"><span>ZKAS inside</span></div><div class="v" id="held">–</div><div class="s">all of it in sealed letters</div></div>
+    <div class="stat"><div class="k"><span>Letters opened, ever</span><span class="delta" id="spent-d"></span></div><div class="v" id="spent">–</div><div class="s">to spend, you open one · which one stays secret</div></div>
   </div>
   <div class="grp"><h3>Who runs it</h3>
     <div class="stat"><div class="k"><span>Miners · nodes</span></div><div class="v" id="net">–</div><div class="s" id="net-s">–</div></div>
   </div>
 </div>
 
-<div class="hud guide" id="guide">
-  <h2>How to read this <button id="close" aria-label="Close">×</button></h2>
-  <ol>
-    <li><canvas data-icon="crate"></canvas><div><b>Each crate is a block.</b> A new one every second, rolling left. The lines link it to the blocks it confirms.</div></li>
-    <li><canvas data-icon="lanes"></canvas><div><b>Two crates at once?</b> Both are kept — this network throws nothing away.</div></li>
-    <li><canvas data-icon="note"></canvas><div><b>Capsules are freshly minted coins,</b> sealed into a parcel the moment they leave the block.</div></li>
-    <li><canvas data-icon="env"></canvas><div><b>Envelopes are payments.</b> You can see one happened and how many parcels moved. Not who, not how much.</div></li>
-    <li><canvas data-icon="pool"></canvas><div><b>The pool holds every coin, sealed.</b> Bubbles mean someone spent a parcel — which one, nobody can tell.</div></li>
-  </ol>
-  <div class="foot">This page is blind on purpose: there are no addresses, amounts or balances to show — the network itself can't see them. <a href="https://explorer.zkas.info" target="_blank" rel="noopener">Open the explorer →</a></div>
+<div class="hud legend" id="legend">
+  <span><canvas data-icon="crate"></canvas><b>Crate</b> = a block · one every second</span>
+  <span><canvas data-icon="lanes"></canvas><b>Two at once</b> = both kept</span>
+  <span><canvas data-icon="note"></canvas><b>Small envelope</b> = new coins, sealed in a letter</span>
+  <span><canvas data-icon="env"></canvas><b>Glowing envelope</b> = a payment · who &amp; how much: sealed</span>
+  <span><canvas data-icon="pool"></canvas><b>Bubble</b> = a letter opened to spend it · which one: secret</span>
 </div>
-
-<div class="hud caption">
-  <div class="leg" id="legend"></div>
-  <div class="src">source: <a href="https://explorer.zkas.info/api/blocks/recent" target="_blank" rel="noopener">explorer.zkas.info/api</a> · <span id="lat">–</span></div>
-</div>
+<span id="lat" hidden></span>
 <div class="tip" id="tip"></div>
 
 <script>
@@ -178,15 +147,15 @@ function resize(){
   stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
   const statsR = stats.getBoundingClientRect();
   NARROW = W < 600;
-  const guideOn = W >= 900;
   LANE_GAP = NARROW ? 50 : 60;
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
   const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
   LANE_Y = NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
   // The pool sits in the band the HUD leaves free, anchored to the bottom.
-  const left = NARROW ? 10 : statsR.right + 16, right = guideOn ? W - 330 : W - 10;
+  const left = NARROW ? 10 : statsR.right + 16, right = W - 10;
   const railY = LANE_Y + CRATE/2 + 10;
-  const topLimit = railY + (NARROW ? 90 : 130), bottomLimit = H - (NARROW ? 84 : 62);
+  const legendTop = document.getElementById('legend').getBoundingClientRect().top;
+  const topLimit = railY + (NARROW ? 90 : 130), bottomLimit = legendTop - 6;
   FADE_X = NARROW ? 0 : statsR.right + 30;
   const availH = Math.max(120, bottomLimit - topLimit);
   PRX = Math.max(90, Math.min((right-left)/2 - 16, availH/1.04));
@@ -206,13 +175,6 @@ const lerp = (a,b,t) => a+(b-a)*t;
 const hexA = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
 function el(id){ return document.getElementById(id); }
 function setStatus(kind, text){ const p=el('status'); p.className='pill '+kind; p.textContent=text; }
-function renderLegend(){
-  el('legend').innerHTML =
-    `<span><i style="background:${hexA(C.teal,.85)}"></i>block</span>` +
-    `<span><i style="background:${hexA(C.teal,.85)};box-shadow:0 -7px 0 -1px ${hexA(C.teal,.5)}"></i>two blocks at once (both kept)</span>` +
-    `<span><i style="background:${C.tealBright};border-radius:5px"></i>sealed parcel of coins</span>` +
-    `<span><i style="background:transparent;border:1px solid ${C.tealBright};border-radius:50%"></i>a parcel was spent</span>`;
-}
 function inPool(x,y){ const dx=(x-PCX)/PRX, dy=(y-PCY)/PRY; return dx*dx+dy*dy <= 1; }
 function clipPool(){ cx.beginPath(); cx.ellipse(PCX,PCY,PRX,PRY,0,0,TAU); cx.clip(); }
 
@@ -253,7 +215,7 @@ function prevTick(b){
   return best==null ? [] : S.blocks.filter(o => o.daa===best);
 }
 function normaliseRecent(list){
-  // /blocks/recent, newest first. txs[0] = coinbase; its outputs = one entry per minted parcel.
+  // /blocks/recent, newest first. txs[0] = coinbase; its outputs = one entry per minted letter (note).
   return list.slice().reverse().map(r => {
     const cb = r.txs && r.txs[0];
     const mintNotes = cb ? Math.max(1, cb.outputs.filter(o=>o[1]==='shielded').length) : 1;
@@ -381,7 +343,7 @@ function spawnBubbles(n){
     const r = Math.sqrt(Math.random())*0.85, a = Math.random()*TAU;
     S.bubbles.push({ x: PCX + Math.cos(a)*r*PRX, y: PCY + Math.abs(Math.sin(a))*r*PRY*0.9 + PRY*0.05, r: 2.5+Math.random()*2.5, t:0, life: 1.3+Math.random()*0.8, wob: Math.random()*TAU });
   }
-  S.labels.push({ text: n===1 ? 'someone spent a parcel — which one, nobody can tell' : `${n} parcels were spent — which ones, nobody can tell`, x: PCX, y: PCY - PRY - 22, t:0, life:4 });
+  S.labels.push({ text: n===1 ? 'someone opened a letter to spend it — which one, nobody can tell' : `${n} letters were opened to be spent — which ones, nobody can tell`, x: PCX, y: PCY - PRY - 22, t:0, life:4 });
 }
 
 // ───────────────────────── drawing primitives ─────────────────────────
@@ -407,10 +369,12 @@ function drawCrate(x,y,opts={}){
   cx.beginPath(); cx.moveTo(x-3.5,y+2); cx.lineTo(x-1,y+4.5); cx.lineTo(x+4,y-1); cx.stroke();
   cx.restore();
 }
-function drawCapsule(x,y,scale=1,alpha=1){
+function drawCapsule(x,y,scale=1,alpha=1){   // a small sealed letter
   cx.save(); cx.translate(x,y); cx.scale(scale,scale);
-  roundRect(-6,-3.5,12,7,3.5); cx.fillStyle = hexA(C.tealBright, alpha); cx.fill();
-  cx.strokeStyle = `rgba(11,11,15,${.6*alpha})`; cx.lineWidth=1; cx.stroke();
+  roundRect(-7,-4.5,14,9,1.5); cx.fillStyle = hexA(C.tealBright, alpha); cx.fill();
+  cx.strokeStyle = `rgba(11,11,15,${.7*alpha})`; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(-7,-4.5); cx.lineTo(0,1); cx.lineTo(7,-4.5); cx.stroke();   // flap
+  cx.fillStyle = hexA(C.ember, .9*alpha); cx.beginPath(); cx.arc(0,1,1.6,0,TAU); cx.fill();   // wax seal
   cx.restore();
 }
 function drawEnvelope(x,y,parcels,pulse,alpha=1){
@@ -419,16 +383,16 @@ function drawEnvelope(x,y,parcels,pulse,alpha=1){
   roundRect(-14,-9,28,18,3); cx.fillStyle=C.surface; cx.fill(); cx.strokeStyle=C.tealBright; cx.lineWidth=1.6; cx.stroke();
   cx.beginPath(); cx.moveTo(-14,-9); cx.lineTo(0,3); cx.lineTo(14,-9); cx.stroke();
   cx.shadowBlur=0; cx.fillStyle=C.tealBright; cx.font=`500 10px ${MONO()}`; cx.textAlign='center';
-  cx.fillText('payment · '+parcels+' parcels', 0, 23);
+  cx.fillText('payment · '+parcels+' letters', 0, 23);
   cx.restore();
 }
 function drawGuideIcons(){
-  document.querySelectorAll('.guide canvas').forEach(c=>{
-    const g=c.getContext('2d'); c.width=52; c.height=52; g.setTransform(2,0,0,2,0,0);
+  document.querySelectorAll('.legend canvas').forEach(c=>{
+    const g=c.getContext('2d'); c.width=44; c.height=44; g.setTransform(2,0,0,2,0,0); g.translate(-2,-2);
     const kind=c.dataset.icon;
     if (kind==='crate'){ g.fillStyle=hexA(C.tealBright,.7); g.beginPath(); g.moveTo(4,8); g.lineTo(9,3); g.lineTo(25,3); g.lineTo(20,8); g.closePath(); g.fill(); g.fillStyle=hexA(C.tealDeep,.95); g.beginPath(); g.moveTo(20,8); g.lineTo(25,3); g.lineTo(25,19); g.lineTo(20,24); g.closePath(); g.fill(); g.fillStyle=hexA(C.teal,.85); g.fillRect(4,8,16,16); }
     if (kind==='lanes'){ g.fillStyle=hexA(C.teal,.85); rr(g,4,2,18,10,3); g.fill(); g.fillStyle=hexA(C.teal,.55); rr(g,4,15,18,10,3); g.fill(); }
-    if (kind==='note'){ [0,1,2].forEach(i=>{ g.fillStyle=C.tealBright; rr(g,3+i*6,10+((i%2)*4),10,6,3); g.fill(); }); }
+    if (kind==='note'){ [0,1].forEach(i=>{ const x=3+i*9, y=8+i*5; g.fillStyle=C.tealBright; rr(g,x,y,14,9,1.5); g.fill(); g.strokeStyle='rgba(11,11,15,.7)'; g.lineWidth=1; g.beginPath(); g.moveTo(x,y); g.lineTo(x+7,y+5.5); g.lineTo(x+14,y); g.stroke(); g.fillStyle=C.ember; g.beginPath(); g.arc(x+7,y+5.5,1.6,0,TAU); g.fill(); }); }
     if (kind==='env'){ g.strokeStyle=C.tealBright; g.lineWidth=1.5; g.fillStyle=C.surface; rr(g,3,7,20,13,2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(3,7); g.lineTo(13,15); g.lineTo(23,7); g.stroke(); }
     if (kind==='pool'){ const grd=g.createRadialGradient(13,15,2,13,15,13); grd.addColorStop(0,hexA(C.teal,.7)); grd.addColorStop(1,hexA(C.tealDeep,.3)); g.fillStyle=grd; g.beginPath(); g.ellipse(13,15,12,7,0,0,TAU); g.fill(); g.strokeStyle=hexA(C.tealBright,.8); g.lineWidth=1; g.stroke(); g.beginPath(); g.arc(16,12,2.2,0,TAU); g.stroke(); }
   });
@@ -474,8 +438,9 @@ function frame(){
   for (const f of S.field){
     const dx = REDUCED ? 0 : Math.sin(t*f.sp + f.ph)*5;
     const a = 0.14 + (1-f.d)*0.28;
-    cx.fillStyle = hexA(f.d<0.5?C.tealBright:C.teal, a);
-    cx.beginPath(); cx.ellipse(f.x+dx, f.y, 5*f.s, 2.6*f.s, 0, 0, TAU); cx.fill();
+    const w = 9*f.s, h = 5.5*f.s, x0 = f.x+dx-w/2, y0 = f.y-h/2;
+    cx.fillStyle = hexA(f.d<0.5?C.tealBright:C.teal, a); cx.fillRect(x0, y0, w, h);
+    if (f.s > 0.9){ cx.strokeStyle = `rgba(11,11,15,${a*.8})`; cx.lineWidth = .8; cx.beginPath(); cx.moveTo(x0,y0); cx.lineTo(x0+w/2,y0+h*.6); cx.lineTo(x0+w,y0); cx.stroke(); }
   }
   // the pool's headline number
   const target = S.noteCount==null ? 0 : S.noteCount;
@@ -486,8 +451,7 @@ function frame(){
     cx.fillStyle = 'rgba(11,11,15,.35)'; cx.fillText(fmt(S.noteShown), PCX, PCY+2);
     cx.fillStyle = hexA(C.tealBright,.9); cx.fillText(fmt(S.noteShown), PCX, PCY);
     cx.font = `500 ${Math.max(10, size*0.15)}px ${FONT()}`; cx.fillStyle = hexA(C.tealBright,.6);
-    cx.fillText('SEALED PARCELS OF COINS', PCX, PCY + size*0.62);
-    cx.fillStyle = hexA(C.tealBright,.35); cx.fillText('nobody can see inside', PCX, PCY + size*0.62 + Math.max(10,size*0.15)*1.5);
+    cx.fillText('SEALED LETTERS', PCX, PCY + size*0.62);
     cx.textBaseline='alphabetic';
   }
   // ripples (inside the pool)
@@ -504,7 +468,6 @@ function frame(){
   cx.beginPath(); cx.ellipse(PCX,PCY,PRX,PRY,0,0,TAU); cx.strokeStyle = hexA(C.tealBright,.75); cx.lineWidth = 1.6; cx.stroke();
   cx.beginPath(); cx.ellipse(PCX,PCY,PRX-8,PRY-5,0,0,TAU); cx.strokeStyle = hexA(C.tealBright,.14); cx.lineWidth = 1; cx.stroke();
   cx.fillStyle = C.muted; cx.font=`500 10.5px ${FONT()}`; cx.textAlign='center';
-  if (!NARROW) cx.fillText('THE SHIELDED POOL', PCX, PCY + PRY + 26);
 
   // ── conveyor rail with second-ticks that move with the blocks
   const railY = LANE_Y + CRATE/2 + 10;
@@ -515,7 +478,7 @@ function frame(){
   for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
   cx.fillStyle = C.muted; cx.textAlign='right';
   cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
-  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW COINS DROP IN HERE', PCX, PCY - PRY - 10);
+  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 10);
   cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(PCX, railY+26); cx.lineTo(PCX, PCY - PRY - 24); cx.stroke(); cx.setLineDash([]);
 
   // ── blocks: positions, threads, crates
@@ -558,7 +521,7 @@ function frame(){
       if (n.y >= n.land){
         n.sunk = true; n.st = 0; n.y = n.land; splash(n.x, n.land, n.kind==='env');
         S.noteShown += n.kind==='env' ? n.parcels : 1;
-        if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} parcels moved · who and how much: hidden`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
+        if (n.kind==='env') S.labels.push({ text:`a payment · ${n.parcels} letters moved · who and how much: sealed`, x:PCX, y:PCY - PRY - 40, t:0, life:3.6 });
       }
     } else {
       n.st += dt; n.y += 10*dt; const a = Math.max(0, 1 - n.st/1.4);
@@ -601,9 +564,7 @@ function frame(){
   S.labels = S.labels.filter(l=>!l.dead);
 
   // bottom fade so the legend stays legible
-  const fg = cx.createLinearGradient(0,H-70,0,H); fg.addColorStop(0,'rgba(11,11,15,0)'); fg.addColorStop(1,'rgba(11,11,15,.9)');
-  cx.fillStyle = fg; cx.fillRect(0,H-70,W,70);
-
+  
   hoverPick();
   requestAnimationFrame(frame);
 }
@@ -613,8 +574,6 @@ const tip = el('tip'); let mouse = {x:-1,y:-1};
 cv.addEventListener('mousemove', e => { mouse = {x:e.clientX, y:e.clientY}; });
 cv.addEventListener('mouseleave', () => { mouse = {x:-1,y:-1}; });
 cv.addEventListener('click', () => { if (S.hover && !S.sim) open(`https://explorer.zkas.info/blocks/${S.hover.hash}`,'_blank','noopener'); });
-el('help').addEventListener('click', () => el('guide').classList.toggle('open'));
-el('close').addEventListener('click', () => el('guide').classList.remove('open'));
 function hoverPick(){
   let hit=null;
   for (const b of S.blocks){ const y = LANE_Y - b.lane*LANE_GAP; if (mouse.x>=b.x-CRATE/2-2 && mouse.x<=b.x+CRATE/2+DEPTH+2 && mouse.y>=y-CRATE/2-DEPTH-2 && mouse.y<=y+CRATE/2+2) hit=b; }
@@ -625,7 +584,7 @@ function hoverPick(){
   const status = sibs>1 ? `one of ${sibs} blocks found in the same second — all kept` : 'confirmed';
   tip.innerHTML = `<div class="h">Block #${fmt(hit.daa)}</div>
     <div class="m">${hit.hash.slice(0,12)}… · ${age}s ago</div>
-    <div>${hit.mintNotes} parcel${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
+    <div>${hit.mintNotes} sealed letter${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
     <div class="m">${status}</div>
     <div class="no">${S.sim?'simulated block':'click to open in explorer'}</div>`;
   tip.style.left = Math.min(W-280, mouse.x+14)+'px'; tip.style.top = Math.min(H-120, mouse.y+14)+'px';
@@ -633,7 +592,6 @@ function hoverPick(){
 }
 
 // ───────────────────────── boot ─────────────────────────
-renderLegend();
 if (FORCE_SIM) startSim('forced with ?sim');
 else {
   pollBlocks(); pollShielded(); pollPulse(); pollMiners(); pollNodes();
