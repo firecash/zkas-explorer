@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import numeral from "numeral";
 import AnalyticsIcon from "../assets/analytics.svg";
 import Shield from "../assets/verified_user.svg";
@@ -11,7 +11,7 @@ import Card from "../layout/Card";
 import CardContainer from "../layout/CardContainer";
 import MainBox from "../layout/MainBox";
 import FooterHelper from "../layout/FooterHelper";
-import { AreaChart, Donut, DualBar } from "../components/MiniCharts";
+import { AreaChart, CompareLineChart } from "../components/MiniCharts";
 import { emissionSeries, supplySeries } from "../config/emission";
 import { BRAND } from "../config/brand";
 import { useBlockdagInfo } from "../hooks/useBlockDagInfo";
@@ -20,6 +20,7 @@ import { useBlockReward } from "../hooks/useBlockReward";
 import { useHalving } from "../hooks/useHalving";
 import { useShieldedPool } from "../hooks/useShieldedPool";
 import { useNetworkPulse } from "../hooks/useNetworkPulse";
+import { API_BASE } from "../api/config";
 
 export function meta() {
   return [
@@ -45,14 +46,57 @@ const xTicks = [0, 12, 24, 36, 48, 60];
 const fmtMonth = (x: number) => (x === 0 ? "launch" : `${x / 12}`);
 const fmtTimeline = (x: number) => (x === 0 ? "launch" : x < 12 ? `${x} mo` : `${x / 12} yr`);
 
+type KaspaHashrateSample = { timestamp: number; hashrate_kh: number };
+type DailyHashrate = { date: string; timestamp: number; value: number };
+type ZkasWorkSample = { timestamp: number; difficulty: number };
+
+const KASPA_HISTORY_URL = "https://api.kaspa.org/info/hashrate/history";
+const ZKAS_LAUNCH = Date.parse("2026-07-26T00:00:00Z");
+const CHART_START = Date.parse("2026-07-20T00:00:00Z");
+const dayKey = (timestamp: number) => new Date(timestamp).toISOString().slice(0, 10);
+const averageDaily = (samples: Array<{ timestamp: number; value: number }>): DailyHashrate[] => {
+  const bins = new Map<string, { total: number; count: number; timestamp: number }>();
+  for (const sample of samples) {
+    if (!Number.isFinite(sample.value) || sample.value <= 0) continue;
+    const date = dayKey(sample.timestamp);
+    const bin = bins.get(date) ?? { total: 0, count: 0, timestamp: Date.parse(`${date}T12:00:00Z`) };
+    bin.total += sample.value;
+    bin.count += 1;
+    bins.set(date, bin);
+  }
+  return [...bins.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, bin]) => ({ date, timestamp: bin.timestamp, value: bin.total / bin.count }));
+};
+const dateLabel = (timestamp: number) => new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(timestamp));
+
 export default function Analytics() {
   const [workWindow, setWorkWindow] = useState("15m");
   const { data: dag, isLoading: dagLoading } = useBlockdagInfo();
   const { data: coin, isLoading: coinLoading } = useCoinSupply();
   const { data: reward, isLoading: rewardLoading } = useBlockReward();
   const { data: halving } = useHalving();
-  const { data: shielded, isLoading: shieldedLoading } = useShieldedPool();
+  const { data: shielded } = useShieldedPool();
   const { data: pulse, isLoading: pulseLoading } = useNetworkPulse(workWindow);
+  const [kaspaHistory, setKaspaHistory] = useState<KaspaHashrateSample[]>([]);
+  const [zkasHistory, setZkasHistory] = useState<ZkasWorkSample[]>([]);
+  const [kaspaHistoryError, setKaspaHistoryError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(KASPA_HISTORY_URL, { headers: { Accept: "application/json" } })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Kaspa history unavailable")))
+      .then((rows: KaspaHashrateSample[]) => { if (!cancelled) setKaspaHistory(rows); })
+      .catch(() => { if (!cancelled) setKaspaHistoryError(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/info/work-history`, { headers: { Accept: "application/json" } })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("ZKAS history unavailable")))
+      .then((rows: ZkasWorkSample[]) => { if (!cancelled) setZkasHistory(rows); })
+      .catch(() => { if (!cancelled) setZkasHistory([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   const circulating = toFc(coin?.circulatingSupply);
   // Place the "today" marker on the supply curve at the month whose modelled
@@ -61,9 +105,26 @@ export default function Analytics() {
     (best, p, i) => (Math.abs(p.y * 1e9 - circulating) < Math.abs(supply[best].y * 1e9 - circulating) ? i : best),
     0,
   );
-  const tIn = toFc(shielded?.turnstileIn);
-  const tOut = toFc(shielded?.turnstileOut);
-  const shieldedShare = circulating > 0 ? Math.min(1, (tIn - tOut) / circulating) : 1;
+  const comparison = useMemo(() => {
+    const kaspa = averageDaily(kaspaHistory
+      .filter((sample) => sample.timestamp >= CHART_START)
+      // The REST field is kH/s; convert to TH/s for the shared chart axis.
+      .map((sample) => ({ timestamp: sample.timestamp, value: sample.hashrate_kh / 1e9 })));
+    const zkasDaily = averageDaily(zkasHistory
+      .filter((sample) => sample.timestamp >= ZKAS_LAUNCH)
+      .map((sample) => ({ timestamp: sample.timestamp, value: sample.difficulty * 2 / 1e12 })));
+    const dates = Array.from(new Set([...kaspa.map((p) => p.date), ...zkasDaily.map((p) => p.date)])).sort();
+    const lookup = (items: DailyHashrate[]) => new Map(items.map((p) => [p.date, p]));
+    const kaspaMap = lookup(kaspa); const zkasMap = lookup(zkasDaily);
+    const points = dates.map((date) => {
+      const x = Date.parse(`${date}T12:00:00Z`);
+      // Keep the pre-launch interval visible at zero so the launch marker has
+      // meaning; after launch, absent samples stay gaps rather than guesses.
+      const zkasValue = zkasMap.get(date)?.value ?? (x < ZKAS_LAUNCH ? 0 : null);
+      return { x, kaspa: kaspaMap.get(date)?.value ?? null, zkas: zkasValue };
+    });
+    return { points, kaspa: kaspa.at(-1)?.value ?? null, zkas: zkasDaily.at(-1)?.value ?? null, hasData: kaspa.length > 0 };
+  }, [kaspaHistory, zkasHistory]);
 
   return (
     <>
@@ -174,7 +235,7 @@ export default function Analytics() {
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
           Gross per-block issuance starts at 60 ZKAS (57 ZKAS to the miner after the 5% development allocation)
-          and decays with a 3-month half-life. Once it falls to the tail
+          and steps down about every 7.6 days, roughly halving over three months. Once it falls to the tail
           floor (~month 10) a perpetual tail of <b className="text-black">6 ZKAS</b> is paid, stepping down once to
           a permanent <b className="text-black">0.6 ZKAS</b> at month 24 — funding proof-of-work security forever.
           There is no fixed supply cap.
@@ -219,55 +280,24 @@ export default function Analytics() {
         <p className="mt-2 text-sm text-gray-500">Cumulative coins in circulation (billions of ZKAS).</p>
       </MainBox>
 
-      {/* Privacy dashboard */}
+      {/* The shielded pool, live (public/live.html in embed mode) */}
       <MainBox>
-        <div className="mb-1 flex items-center gap-x-3">
-          <Shield className="w-6 fill-primary" />
-          <span className="text-2xl">Shielded-pool privacy</span>
+        <div className="mb-4 flex items-center justify-between gap-x-3">
+          <div className="flex items-center gap-x-3">
+            <Shield className="w-6 fill-primary" />
+            <span className="text-2xl">The shielded pool</span>
+          </div>
+          <a href="/live" className="text-primary hover:underline text-sm whitespace-nowrap">
+            Open full view ↗
+          </a>
         </div>
-        <p className="mb-6 max-w-3xl text-gray-500">
-          {BRAND.name} is shielded by default — every coin lives in the Orchard pool. Amounts, senders and receivers are
-          encrypted on-chain; only aggregate, verifiable facts are public.
-        </p>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr]">
-          <div className="flex flex-col items-center justify-center gap-y-2 rounded-2xl border border-gray-100 p-6">
-            <Donut
-              value={shieldedShare}
-              centerTop={`${(shieldedShare * 100).toFixed(0)}%`}
-              centerBottom="of supply shielded"
-            />
-            <span className="text-center text-sm text-gray-500">
-              {numeral(tIn).format("0,0")} ZKAS entered · {numeral(tOut).format("0,0")} exited
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Card
-                title="Anonymity set"
-                loading={shieldedLoading}
-                value={numeral(shielded?.noteCount ?? 0).format("0,0")}
-                subtext="shielded notes in the pool"
-              />
-              <Card
-                title="Shielded spends"
-                loading={shieldedLoading}
-                value={numeral(shielded?.nullifierCount ?? 0).format("0,0")}
-                subtext="nullifiers revealed"
-              />
-            </div>
-            <div className="rounded-2xl border border-gray-100 p-4">
-              <span className="text-sm text-gray-500">Turnstile flow (transparent ↔ shielded)</span>
-              <div className="mt-3">
-                <DualBar
-                  rows={[
-                    { label: "Value shielded (in)", value: tIn, display: `${numeral(tIn).format("0,0")} ZKAS` },
-                    { label: "Value unshielded (out)", value: tOut, display: `${numeral(tOut).format("0,0")} ZKAS` },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-[#0b0b0f]">
+          <iframe
+            src="/live?embed"
+            title="The shielded pool, live"
+            loading="lazy"
+            className="block h-[360px] w-full sm:h-[420px]"
+          />
         </div>
       </MainBox>
 
@@ -280,9 +310,41 @@ export default function Analytics() {
         <Countdown targetSec={halving?.nextHalvingTimestamp} nextAmount={halving?.nextHalvingAmount} />
       </MainBox>
 
+      {/* Merged-mining context */}
+      <MainBox>
+        <div className="mb-1 flex items-center gap-x-3">
+          <Landslide className="w-6 fill-primary" />
+          <span className="text-2xl">Kaspa + ZKAS hashrate</span>
+        </div>
+        <p className="mb-5 max-w-3xl text-gray-500">
+          Daily consensus hashrate on both kHeavyHash networks, aligned to the same UTC dates. Kaspa history starts July 20; ZKAS begins at its July 26 launch.
+        </p>
+        {comparison.hasData ? <>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Card title="Kaspa · latest daily average" value={comparison.kaspa == null ? "—" : `${numeral(comparison.kaspa).format("0,0.[0]")} TH/s`} subtext="official REST history" />
+            <Card title="ZKAS · latest daily average" value={comparison.zkas == null ? "—" : `${numeral(comparison.zkas).format("0,0.[0]")} TH/s`} subtext="consensus difficulty" />
+            <Card title="Kaspa / ZKAS" value={comparison.kaspa != null && comparison.zkas ? `${numeral(comparison.kaspa / comparison.zkas).format("0.0")}×` : "—"} subtext="same-day hashrate ratio" />
+          </div>
+          <div className="rounded-2xl border border-gray-100 p-3 sm:p-5">
+            <CompareLineChart
+              series={[
+                { key: "kaspa", label: "Kaspa", color: "var(--color-primary)", data: comparison.points.map((p) => ({ x: p.x, y: p.kaspa })) },
+                { key: "zkas", label: "ZKAS", color: "#f59e0b", data: comparison.points.map((p) => ({ x: p.x, y: p.zkas })) },
+              ]}
+              launchX={ZKAS_LAUNCH}
+              formatX={dateLabel}
+              formatY={(value) => `${numeral(value).format("0,0.[0]")}T`}
+              ariaLabel="Daily Kaspa and ZKAS network hashrate comparison"
+            />
+          </div>
+          <p className="mt-2 text-sm text-gray-500">Daily averages · TH/s. ZKAS points are omitted until a real explorer sample exists; no missing interval is treated as zero.</p>
+        </> : <div className="rounded-2xl border border-gray-100 p-6 text-sm text-gray-500">Kaspa history is temporarily unavailable.</div>}
+        {kaspaHistoryError && <p className="mt-2 text-xs text-gray-400">Kaspa’s official history endpoint did not respond; retrying on reload.</p>}
+      </MainBox>
+
       <FooterHelper icon={Landslide}>
         The emission and supply curves are deterministic — computed from {BRAND.name}'s coinbase constants (60 ZKAS
-        initial reward, 3-month half-life, 6 → 0.6 ZKAS perpetual tail). All other figures are live from a
+        initial reward, ~7.6-day reward steps, 6 → 0.6 ZKAS perpetual tail). All other figures are live from a
         {" "}{BRAND.name} node. 1 ZKAS = 100,000,000 sompi.
       </FooterHelper>
     </>
@@ -346,7 +408,7 @@ function Countdown({ targetSec, nextAmount }: { targetSec?: number; nextAmount?:
         <Unit v={secs} label="secs" />
       </div>
       <span className="text-gray-500">
-        Gross issuance halves to <b className="text-black">{nextAmount ?? "—"} ZKAS</b> at the next 3-month interval.
+        The next reward step is <b className="text-black">{nextAmount ?? "—"} ZKAS</b>; reductions occur about every 7.6 days.
       </span>
     </div>
   );
