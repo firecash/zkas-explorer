@@ -79,8 +79,7 @@
   .strip .mini{display:flex;gap:18px;font:500 11px/1.2 var(--mono);color:var(--muted)}
   .strip .mini b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
   .strip .mini b.t{color:var(--teal)}
-  .strip a{pointer-events:auto;font:500 12px var(--font);color:var(--teal);text-decoration:none;white-space:nowrap}
-  .strip a:hover{text-decoration:underline}
+  @media (max-width:600px){ .strip .mini{gap:12px;font-size:10px} .strip .mini b{font-size:13px} .strip .opt{display:none} }
   @media (prefers-reduced-motion:reduce){ .pill.live::before{animation:none} }
 </style>
 </head>
@@ -121,9 +120,8 @@
     <span>blocks / s<b id="e-bps">–</b></span>
     <span>private letters<b class="t" id="e-notes">–</b></span>
     <span>payments / h<b id="e-pay">–</b></span>
-    <span>letters opened<b id="e-spent">–</b></span>
+    <span class="opt">letters opened<b id="e-spent">–</b></span>
   </div>
-  <a href="/live" target="_top">Open full view →</a>
 </div>
 <span id="lat" hidden></span>
 <div class="tip" id="tip"></div>
@@ -143,7 +141,7 @@ const SPEED = 62;             // px per second the conveyor moves
 const CRATE = 44;             // crate face size
 const DEPTH = 11;             // isometric depth
 let LANE_GAP = 60;            // vertical gap between stacked crates (set per viewport)
-const MAX_LANE = 2;
+let MAX_LANE = 2;
 const C = {
   bg:'#0b0b0f', surface:'#16161d', grid:'#24242e', ink:'#f6f6f8', muted:'#9090a0', muted2:'#5d5d6c',
   teal:'#17d6be', tealBright:'#7ef7e4', tealDeep:'#0a6e63', ember:'#ff6b35', alert:'#f59e3c'
@@ -168,15 +166,16 @@ function resize(){
   stats.style.top = Math.round(brand.getBoundingClientRect().bottom + 14) + 'px';
   const statsR = stats.getBoundingClientRect();
   NARROW = W < 600;
-  LANE_GAP = NARROW ? 50 : 60;
+  LANE_GAP = EMBED ? 46 : NARROW ? 50 : 60;
+  MAX_LANE = EMBED ? 1 : 2;
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
-  const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
-  LANE_Y = EMBED ? head + 30 : NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
+  const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + (EMBED ? 8 : 34);
+  LANE_Y = EMBED ? head + (NARROW ? 58 : 44) : NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
   // The pool sits in the band the HUD leaves free, anchored to the bottom.
   const left = (NARROW || EMBED) ? 10 : statsR.right + 16, right = W - 10;
   const railY = LANE_Y + CRATE/2 + 10;
   const legendTop = EMBED ? H : document.getElementById('legend').getBoundingClientRect().top;
-  const topLimit = railY + (EMBED ? 56 : NARROW ? 70 : 84), bottomLimit = legendTop - (EMBED ? 8 : 4);
+  const topLimit = railY + (EMBED ? 40 : NARROW ? 70 : 84), bottomLimit = legendTop - (EMBED ? 10 : 4);
   FADE_X = (NARROW || EMBED) ? 0 : statsR.right + 30;
   const availH = Math.max(120, bottomLimit - topLimit);
   PRX = Math.max(90, Math.min((right-left)/2 - 12, availH/1.2));
@@ -509,7 +508,7 @@ function frame(){
   for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
   cx.fillStyle = C.muted; cx.textAlign='right';
   if (!EMBED) cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
-  cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 12);
+  if (!EMBED){ cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 12); }
   cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(PCX, railY+26); cx.lineTo(PCX, PCY - PRY - 24); cx.stroke(); cx.setLineDash([]);
 
   // ── blocks: positions, threads, crates
