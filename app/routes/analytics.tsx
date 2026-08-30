@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import numeral from "numeral";
 import AnalyticsIcon from "../assets/analytics.svg";
-import Shield from "../assets/verified_user.svg";
 import Coins from "../assets/coins.svg";
 import Trophy from "../assets/trophy.svg";
 import Box from "../assets/box.svg";
@@ -176,7 +175,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <AnalyticsIcon className="w-6 fill-primary" />
-          <span className="text-2xl">Network work</span>
+          <span className="text-lg">Network work</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
           Difficulty and estimated network hashrate over the selected window, sampled from
@@ -231,7 +230,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Trophy className="w-6 fill-primary" />
-          <span className="text-2xl">Emission schedule</span>
+          <span className="text-lg">Emission schedule</span>
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
           Gross per-block issuance starts at 60 ZKAS (57 ZKAS to the miner after the 5% development allocation)
@@ -261,7 +260,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Coins className="w-6 fill-primary" />
-          <span className="text-2xl">Coins in circulation</span>
+          <span className="text-lg">Coins in circulation</span>
         </div>
         <p className="mb-4 max-w-3xl text-gray-500">
           Cumulative ZKAS minted into the shielded pool as the schedule plays out — steeply disinflationary early
@@ -282,15 +281,6 @@ export default function Analytics() {
 
       {/* The shielded pool, live (public/live.html in embed mode) */}
       <MainBox>
-        <div className="mb-4 flex items-center justify-between gap-x-3">
-          <div className="flex items-center gap-x-3">
-            <Shield className="w-6 fill-primary" />
-            <span className="text-2xl">The shielded pool</span>
-          </div>
-          <a href="/live" className="text-primary hover:underline text-sm whitespace-nowrap">
-            Open full view ↗
-          </a>
-        </div>
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-[#0b0b0f]">
           <iframe
             src="/live?embed"
@@ -305,7 +295,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-4 flex items-center gap-x-3">
           <Time className="w-6 fill-primary" />
-          <span className="text-2xl">Next reward reduction</span>
+          <span className="text-lg">Next reward reduction</span>
         </div>
         <Countdown targetSec={halving?.nextHalvingTimestamp} nextAmount={halving?.nextHalvingAmount} />
       </MainBox>
@@ -314,7 +304,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Landslide className="w-6 fill-primary" />
-          <span className="text-2xl">Kaspa + ZKAS hashrate</span>
+          <span className="text-lg">Kaspa + ZKAS hashrate</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
           Daily consensus hashrate on both kHeavyHash networks, aligned to the same UTC dates. Kaspa history starts July 20; ZKAS begins at its July 26 launch.

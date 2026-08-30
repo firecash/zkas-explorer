@@ -6,7 +6,6 @@ import Landslide from "./assets/landslide.svg";
 import Swap from "./assets/swap.svg";
 import Time from "./assets/time.svg";
 import Trophy from "./assets/trophy.svg";
-import Shield from "./assets/verified_user.svg";
 import { AreaChart } from "./components/MiniCharts";
 import { BRAND } from "./config/brand";
 import { BLOCKS_PER_MONTH, emissionSeries, rewardAtMonth, supplySeries } from "./config/emission";
@@ -413,14 +412,6 @@ const Dashboard = () => {
       {/* Live stats — every number glides, the sparklines are this session's
           real block/tx flow, and the rings show progress. */}
       <div className="flex w-full flex-col rounded-4xl bg-gray-50 px-4 py-6 text-gray-900 sm:px-8 md:px-20 md:py-8 lg:px-24 xl:px-36">
-        <div className="mb-5 flex items-baseline justify-between">
-          <span className="text-black text-2xl md:text-3xl">{BRAND.name} by the numbers</span>
-          <span className="hidden text-xs text-gray-500 sm:block">
-            live ·{" "}
-            {sessionBlocks > 0 ? `${numeral(sessionBlocks).format("0,0")} blocks watched this session` : "listening…"}
-          </span>
-        </div>
-
         {/* The graphs: a live pulse straight off the feed, and the chain's
             deterministic emission curve with "you are here". */}
         <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -595,15 +586,6 @@ const Dashboard = () => {
 
       {/* The shielded pool, live: blocks dropping private letters into the pool (public/live.html in embed mode) */}
       <div className="flex w-full flex-col rounded-4xl bg-gray-50 px-4 py-6 sm:px-8 md:px-20 md:py-8 lg:px-24 xl:px-36">
-        <div className="mb-5 flex items-center justify-between gap-x-3">
-          <div className="flex items-center gap-x-3">
-            <Shield className="fill-primary w-6" />
-            <span className="text-black text-2xl md:text-3xl">The shielded pool</span>
-          </div>
-          <a href="/live" className="text-primary hover:underline text-sm whitespace-nowrap">
-            Open full view ↗
-          </a>
-        </div>
         <div className="overflow-hidden rounded-3xl border border-gray-100 bg-[#0b0b0f]">
           <iframe
             src="/live?embed"
