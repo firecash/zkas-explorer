@@ -482,7 +482,7 @@ const Dashboard = () => {
               ariaLabel="Per-block reward in ZKAS over ten years, with today's position marked"
             />
             <p className="mt-1 text-xs text-gray-500">
-              The reward schedule is deterministic — a 3-month half-life down to a perpetual tail. Hover any month.
+              The reward schedule is deterministic — the reward steps down about every 7.6 days and roughly halves over three months. Hover any month.
             </p>
           </div>
         </div>
@@ -593,38 +593,23 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Compact shielded pool */}
+      {/* The shielded pool, live: blocks dropping private letters into the pool (public/live.html in embed mode) */}
       <div className="flex w-full flex-col rounded-4xl bg-gray-50 px-4 py-6 sm:px-8 md:px-20 md:py-8 lg:px-24 xl:px-36">
-        <div className="mb-5 flex items-center gap-x-3">
-          <Shield className="fill-primary w-6" />
-          <span className="text-black text-2xl md:text-3xl">The shielded pool</span>
+        <div className="mb-5 flex items-center justify-between gap-x-3">
+          <div className="flex items-center gap-x-3">
+            <Shield className="fill-primary w-6" />
+            <span className="text-black text-2xl md:text-3xl">The shielded pool</span>
+          </div>
+          <a href="/live" className="text-primary hover:underline text-sm whitespace-nowrap">
+            Open full view ↗
+          </a>
         </div>
-        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DashboardBox
-            description="Current anchor (note-tree root)"
-            value={shortHash(shielded?.anchor)}
-            icon={<Shield className="w-5" />}
-            loading={isLoadingShielded}
-          />
-          <DashboardBox
-            description="Value shielded (turnstile in)"
-            numeric={(Number(shielded?.turnstileIn) || 0) / 1_0000_0000}
-            unit="ZKAS"
-            icon={<Coins className="w-5" />}
-            loading={isLoadingShielded}
-          />
-          <DashboardBox
-            description="Nullifiers (shielded spends)"
-            numeric={shielded?.nullifierCount ?? 0}
-            icon={<Swap className="w-5" />}
-            loading={isLoadingShielded}
-          />
-          <DashboardBox
-            description="Emission per block"
-            value={(shielded?.emissionPerBlock ?? BRAND.initialReward).toString()}
-            unit="ZKAS"
-            icon={<Trophy className="w-5" />}
-            loading={isLoadingShielded}
+        <div className="overflow-hidden rounded-3xl border border-gray-100 bg-[#0b0b0f]">
+          <iframe
+            src="/live?embed"
+            title="The shielded pool, live"
+            loading="lazy"
+            className="block h-[360px] w-full sm:h-[420px]"
           />
         </div>
       </div>

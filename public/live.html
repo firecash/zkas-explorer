@@ -71,6 +71,16 @@
     .legend{gap:4px 14px;padding:8px 12px 10px;font-size:11px}
   }
   @media (max-height:780px){ .stats{gap:8px} .grp{gap:5px} .stat{padding:7px 12px} .stat .s{display:none} .stat .v{font-size:19px} }
+  /* embed mode (?embed): compact strip for the explorer homepage */
+  .embed .brand,.embed .stats,.embed .legend{display:none}
+  .embed #stage{cursor:pointer}
+  .strip{display:none}
+  .embed .strip{display:flex;position:fixed;left:14px;right:14px;top:10px;z-index:2;justify-content:space-between;align-items:center;gap:12px;pointer-events:none}
+  .strip .mini{display:flex;gap:18px;font:500 11px/1.2 var(--mono);color:var(--muted)}
+  .strip .mini b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .strip .mini b.t{color:var(--teal)}
+  .strip a{pointer-events:auto;font:500 12px var(--font);color:var(--teal);text-decoration:none;white-space:nowrap}
+  .strip a:hover{text-decoration:underline}
   @media (prefers-reduced-motion:reduce){ .pill.live::before{animation:none} }
 </style>
 </head>
@@ -106,6 +116,15 @@
   <span><canvas data-icon="env"></canvas><b>Glowing envelope</b> = a payment · who &amp; how much: private</span>
   <span><canvas data-icon="pool"></canvas><b>Bubble</b> = a letter opened to spend it · which one: secret</span>
 </div>
+<div class="strip">
+  <div class="mini">
+    <span>blocks / s<b id="e-bps">–</b></span>
+    <span>private letters<b class="t" id="e-notes">–</b></span>
+    <span>payments / h<b id="e-pay">–</b></span>
+    <span>letters opened<b id="e-spent">–</b></span>
+  </div>
+  <a href="/live" target="_top">Open full view →</a>
+</div>
 <span id="lat" hidden></span>
 <div class="tip" id="tip"></div>
 
@@ -116,6 +135,8 @@
 const qs = new URLSearchParams(location.search);
 const API = qs.get('api') || (location.hostname.endsWith('zkas.info') ? '/api' : 'https://explorer.zkas.info/api');
 const FORCE_SIM = qs.has('sim');
+const EMBED = qs.has('embed');
+if (EMBED) document.documentElement.classList.add('embed');
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SOMPI = 1e8, TAU = Math.PI*2;
 const SPEED = 62;             // px per second the conveyor moves
@@ -150,13 +171,13 @@ function resize(){
   LANE_GAP = NARROW ? 50 : 60;
   // Siblings stack UPWARD from the rail, so leave headroom for MAX_LANE extra rows.
   const head = MAX_LANE*LANE_GAP + CRATE/2 + DEPTH + 34;
-  LANE_Y = NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
+  LANE_Y = EMBED ? head + 30 : NARROW ? statsR.bottom + head : Math.max(H*0.33, brand.getBoundingClientRect().bottom + head);
   // The pool sits in the band the HUD leaves free, anchored to the bottom.
-  const left = NARROW ? 10 : statsR.right + 16, right = W - 10;
+  const left = (NARROW || EMBED) ? 10 : statsR.right + 16, right = W - 10;
   const railY = LANE_Y + CRATE/2 + 10;
-  const legendTop = document.getElementById('legend').getBoundingClientRect().top;
-  const topLimit = railY + (NARROW ? 70 : 84), bottomLimit = legendTop - 4;
-  FADE_X = NARROW ? 0 : statsR.right + 30;
+  const legendTop = EMBED ? H : document.getElementById('legend').getBoundingClientRect().top;
+  const topLimit = railY + (EMBED ? 56 : NARROW ? 70 : 84), bottomLimit = legendTop - (EMBED ? 8 : 4);
+  FADE_X = (NARROW || EMBED) ? 0 : statsR.right + 30;
   const availH = Math.max(120, bottomLimit - topLimit);
   PRX = Math.max(90, Math.min((right-left)/2 - 12, availH/1.2));
   PRY = PRX*0.6;
@@ -267,6 +288,7 @@ function onShielded(notes, nulls, held){
   if (S.nullCount!=null && nulls > S.nullCount) spawnBubbles(Math.min(nulls - S.nullCount, 14));
   S.noteCount = notes; S.nullCount = nulls; S.turnstile = held;
   el('notes').textContent = fmt(notes); el('spent').textContent = fmt(nulls);
+  el('e-notes').textContent = fmt(notes); el('e-spent').textContent = fmt(nulls);
   el('notes-d').textContent = notes-S.notesBase>0 ? '+'+fmt(notes-S.notesBase) : '';
   el('spent-d').textContent = nulls-S.nullBase>0 ? '+'+fmt(nulls-S.nullBase) : '';
   el('held').textContent = fmtK(held);
@@ -274,9 +296,9 @@ function onShielded(notes, nulls, held){
 async function pollPulse(){
   try{
     const d = await (await fetch(`${API}/info/pulse?window=15m`,{cache:'no-store'})).json();
-    S.bps = d.bps15m; el('bps').textContent = d.bps15m.toFixed(2);
+    S.bps = d.bps15m; el('bps').textContent = d.bps15m.toFixed(2); el('e-bps').textContent = d.bps15m.toFixed(2);
     el('bps-s').textContent = `${fmt(d.blocks15m)} in the last 15 min`;
-    el('pay').textContent = fmt(d.transactions1h||0);
+    el('pay').textContent = fmt(d.transactions1h||0); el('e-pay').textContent = fmt(d.transactions1h||0);
   }catch(e){}
 }
 async function pollMiners(){
@@ -455,7 +477,7 @@ function frame(){
   const target = S.noteCount==null ? 0 : S.noteCount;
   S.noteShown = S.noteShown ? lerp(S.noteShown, Math.max(S.noteShown, target), dt*2) : target;
   if (target){
-    const size = Math.min(PRX/3.4, 96);
+    const size = Math.min(PRX/3.4, EMBED ? 54 : 96);
     cx.font = `500 ${size}px ${MONO()}`; cx.textAlign='center'; cx.textBaseline='middle';
     cx.fillStyle = 'rgba(11,11,15,.35)'; cx.fillText(fmt(S.noteShown), PCX, PCY+2);
     cx.fillStyle = hexA(C.tealBright,.9); cx.fillText(fmt(S.noteShown), PCX, PCY);
@@ -486,7 +508,7 @@ function frame(){
   cx.strokeStyle = hexA(C.ink,.22);
   for (let x=off; x<W; x+=SPEED){ cx.beginPath(); cx.moveTo(x,railY); cx.lineTo(x,railY+4); cx.stroke(); }
   cx.fillStyle = C.muted; cx.textAlign='right';
-  cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
+  if (!EMBED) cx.fillText('BLOCKS ARRIVE  ·  1 / SECOND  →', W-22, LANE_Y - MAX_LANE*LANE_GAP - CRATE/2 - DEPTH - 14);
   cx.textAlign='center'; cx.fillStyle = hexA(C.teal,.7); cx.fillText('NEW LETTERS DROP IN HERE', PCX, PCY - PRY - 12);
   cx.strokeStyle = hexA(C.teal,.35); cx.setLineDash([2,6]); cx.beginPath(); cx.moveTo(PCX, railY+26); cx.lineTo(PCX, PCY - PRY - 24); cx.stroke(); cx.setLineDash([]);
 
@@ -586,8 +608,9 @@ function frame(){
 const tip = el('tip'); let mouse = {x:-1,y:-1};
 cv.addEventListener('mousemove', e => { mouse = {x:e.clientX, y:e.clientY}; });
 cv.addEventListener('mouseleave', () => { mouse = {x:-1,y:-1}; });
-cv.addEventListener('click', () => { if (S.hover && !S.sim) open(`https://explorer.zkas.info/blocks/${S.hover.hash}`,'_blank','noopener'); });
+cv.addEventListener('click', () => { if (EMBED) { top.location.href = '/live'; return; } if (S.hover && !S.sim) open(`https://explorer.zkas.info/blocks/${S.hover.hash}`,'_blank','noopener'); });
 function hoverPick(){
+  if (EMBED) return;
   let hit=null;
   for (const b of S.blocks){ const y = LANE_Y - b.lane*LANE_GAP; if (mouse.x>=b.x-CRATE/2-2 && mouse.x<=b.x+CRATE/2+DEPTH+2 && mouse.y>=y-CRATE/2-DEPTH-2 && mouse.y<=y+CRATE/2+2) hit=b; }
   S.hover = hit; cv.style.cursor = hit && !S.sim ? 'pointer' : 'default';
