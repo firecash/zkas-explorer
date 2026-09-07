@@ -1,7 +1,6 @@
 import { API_BASE } from "./config";
 
 const DEFAULT_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
   "Cache-Control": "no-cache",
 };
 

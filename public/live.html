@@ -617,8 +617,9 @@ function hoverPick(){
   const age = Math.max(0, Math.round((Date.now()-hit.ts)/1000));
   const sibs = S.blocks.filter(o=>o.daa===hit.daa).length;
   const status = sibs>1 ? `one of ${sibs} blocks found in the same second — all kept` : 'confirmed';
+  const hexHash = String(hit.hash).replace(/[^0-9a-fx]/gi, '');   // API data: hex only before innerHTML
   tip.innerHTML = `<div class="h">Block #${fmt(hit.daa)}</div>
-    <div class="m">${hit.hash.slice(0,12)}… · ${age}s ago</div>
+    <div class="m">${hexHash.slice(0,12)}… · ${age}s ago</div>
     <div>${hit.mintNotes} private letter${hit.mintNotes===1?'':'s'} of new coins${hit.transfers.length?` · ${hit.transfers.length} payment${hit.transfers.length===1?'':'s'}`:''}${hit.others?` · ${hit.others} other`:''}</div>
     <div class="m">${status}</div>
     <div class="no">${S.sim?'simulated block':'click to open in explorer'}</div>`;
