@@ -122,7 +122,18 @@ export default function Analytics() {
       const zkasValue = zkasMap.get(date)?.value ?? (x < ZKAS_LAUNCH ? 0 : null);
       return { x, kaspa: kaspaMap.get(date)?.value ?? null, zkas: zkasValue };
     });
-    return { points, kaspa: kaspa.at(-1)?.value ?? null, zkas: zkasDaily.at(-1)?.value ?? null, hasData: kaspa.length > 0 };
+    // Merged mining reuses Kaspa's kHeavyHash work: the honest, favourable metric
+    // is how much of Kaspa's hashrate ALSO secures ZKAS, and that it is rising —
+    // not a (false) claim that ZKAS lifted Kaspa's total. Share = zkas/kaspa.
+    const share = points
+      .filter((p) => p.kaspa != null && p.kaspa > 0 && p.zkas != null && p.zkas > 0)
+      .map((p) => ({ x: p.x, y: (p.zkas! / p.kaspa!) * 100 }));
+    return {
+      points, share,
+      kaspa: kaspa.at(-1)?.value ?? null, zkas: zkasDaily.at(-1)?.value ?? null,
+      shareLatest: share.at(-1)?.y ?? null, shareLaunch: share[0]?.y ?? null,
+      hasData: kaspa.length > 0,
+    };
   }, [kaspaHistory, zkasHistory]);
 
   return (
@@ -304,18 +315,31 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Landslide className="w-6 fill-primary" />
-          <span className="text-lg">Kaspa + ZKAS hashrate</span>
+          <span className="text-lg">Secured by Kaspa’s hashrate</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
-          Daily consensus hashrate on both kHeavyHash networks, aligned to the same UTC dates. Kaspa history starts July 20; ZKAS begins at its July 26 launch.
+          ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty.
         </p>
         {comparison.hasData ? <>
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Card title="Kaspa · latest daily average" value={comparison.kaspa == null ? "—" : `${numeral(comparison.kaspa).format("0,0.[0]")} TH/s`} subtext="official REST history" />
             <Card title="ZKAS · latest daily average" value={comparison.zkas == null ? "—" : `${numeral(comparison.zkas).format("0,0.[0]")} TH/s`} subtext="consensus difficulty" />
-            <Card title="Kaspa / ZKAS" value={comparison.kaspa != null && comparison.zkas ? `${numeral(comparison.kaspa / comparison.zkas).format("0.0")}×` : "—"} subtext="same-day hashrate ratio" />
+            <Card title="ZKAS share of Kaspa" value={comparison.shareLatest == null ? "—" : `${numeral(comparison.shareLatest).format("0.0")}%`} subtext="of Kaspa’s hashrate also secures ZKAS" />
           </div>
+          {comparison.share.length > 1 && <div className="mb-4 rounded-2xl border border-gray-100 p-3 sm:p-5">
+            <div className="mb-1 px-1 text-sm font-medium text-black">Share of Kaspa’s hashrate also securing ZKAS</div>
+            <AreaChart
+              data={comparison.share}
+              height={260}
+              formatX={dateLabel}
+              formatY={(value) => `${numeral(value).format("0,0.[0]")}%`}
+              marker={comparison.share.length ? { x: comparison.share[comparison.share.length - 1].x, y: comparison.share[comparison.share.length - 1].y, label: `today · ${numeral(comparison.shareLatest ?? 0).format("0.0")}%` } : undefined}
+              ariaLabel="Percentage of Kaspa network hashrate that also merge-mines ZKAS, over time"
+            />
+            <p className="mt-2 px-1 text-sm text-gray-500">ZKAS-securing hashrate as a percentage of Kaspa’s, by day. Rising = more of Kaspa’s miners are opting into ZKAS merged mining.</p>
+          </div>}
           <div className="rounded-2xl border border-gray-100 p-3 sm:p-5">
+            <div className="mb-1 px-1 text-sm font-medium text-black">Both networks, absolute hashrate (log scale)</div>
             <CompareLineChart
               series={[
                 { key: "kaspa", label: "Kaspa", color: "var(--color-primary)", data: comparison.points.map((p) => ({ x: p.x, y: p.kaspa })) },
@@ -325,9 +349,10 @@ export default function Analytics() {
               formatX={dateLabel}
               formatY={(value) => `${numeral(value).format("0,0.[0]")}T`}
               ariaLabel="Daily Kaspa and ZKAS network hashrate comparison"
+              logY
             />
           </div>
-          <p className="mt-2 text-sm text-gray-500">Daily averages · TH/s. ZKAS points are omitted until a real explorer sample exists; no missing interval is treated as zero.</p>
+          <p className="mt-2 text-sm text-gray-500">Daily averages · TH/s, <strong>log scale</strong> so both networks are legible despite very different magnitudes. ZKAS points are omitted until a real explorer sample exists; no missing interval is treated as zero.</p>
         </> : <div className="rounded-2xl border border-gray-100 p-6 text-sm text-gray-500">Kaspa history is temporarily unavailable.</div>}
         {kaspaHistoryError && <p className="mt-2 text-xs text-gray-400">Kaspa’s official history endpoint did not respond; retrying on reload.</p>}
       </MainBox>
