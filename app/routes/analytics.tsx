@@ -232,22 +232,6 @@ export default function Analytics() {
         <p className="mt-3 max-w-3xl text-sm text-gray-500">
           Priced on the ZKas <a className="text-primary hover:underline" href="/guide/otc/">OTC desk</a> — the project’s own peer-to-peer market, not an external exchange. USD is derived via the live KAS/USD rate{otc?.kasUsd ? ` (1 KAS ≈ $${numeral(otc.kasUsd).format("0,0.[000000]")})` : ""}. Updated {otc?.asOf ? new Date(otc.asOf).toLocaleTimeString() : "live"}.
         </p>
-        {priceHist.length > 1 ? (
-          <div className="mt-4 rounded-2xl border border-gray-100 p-3 sm:p-5">
-            <div className="mb-1 px-1 text-sm font-medium text-black">ZKAS price over time (KAS, daily VWAP · OTC desk)</div>
-            <AreaChart
-              data={priceHist}
-              height={260}
-              formatX={dateLabel}
-              formatY={(v) => numeral(v).format("0,0.[0000]")}
-              marker={{ x: priceHist[priceHist.length - 1].x, y: priceHist[priceHist.length - 1].y, label: `${numeral(priceHist[priceHist.length - 1].y).format("0,0.[0000]")} KAS` }}
-              ariaLabel="ZKAS price over time in KAS, daily volume-weighted average from the OTC desk"
-            />
-            <p className="mt-2 px-1 text-sm text-gray-500">Daily volume-weighted price from every OTC-desk trade. Priced in KAS (the traded pair); at the current rate 1 KAS ≈ ${otc?.kasUsd ? numeral(otc.kasUsd).format("0,0.[000000]") : "—"}.</p>
-          </div>
-        ) : (
-          <p className="mt-4 rounded-2xl border border-gray-100 p-4 text-sm text-gray-500">Price history is loading…</p>
-        )}
       </MainBox>
 
       {/* Live work chart */}
@@ -386,7 +370,7 @@ export default function Analytics() {
           <span className="text-lg">Kaspa + ZKAS hashrate</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
-          ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty.
+          ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty. The violet line is the ZKAS/KAS price (daily VWAP from the OTC desk) on the same log axis — sub-1 gridlines read in KAS.
         </p>
         {comparison.hasData ? <>
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -400,11 +384,12 @@ export default function Analytics() {
               series={[
                 { key: "kaspa", label: "Kaspa", color: "var(--color-primary)", data: comparison.points.map((p) => ({ x: p.x, y: p.kaspa })) },
                 { key: "zkas", label: "ZKAS", color: "#f59e0b", data: comparison.points.map((p) => ({ x: p.x, y: p.zkas })) },
+                { key: "price", label: "ZKAS price (KAS)", color: "#c084fc", data: priceHist },
               ]}
               launchX={ZKAS_LAUNCH}
               formatX={dateLabel}
-              formatY={(value) => `${numeral(value).format("0,0.[0]")}T`}
-              ariaLabel="Daily Kaspa and ZKAS network hashrate comparison"
+              formatY={(value) => (value < 1 ? `${numeral(value).format("0,0.[0000]")} KAS` : `${numeral(value).format("0,0.[0]")}T`)}
+              ariaLabel="Daily Kaspa and ZKAS hashrate, with the ZKAS/KAS price, on a shared log scale"
               logY
             />
           </div>
