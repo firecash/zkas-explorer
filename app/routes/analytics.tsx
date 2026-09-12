@@ -78,6 +78,7 @@ export default function Analytics() {
   const [kaspaHistory, setKaspaHistory] = useState<KaspaHashrateSample[]>([]);
   const [zkasHistory, setZkasHistory] = useState<ZkasWorkSample[]>([]);
   const [kaspaHistoryError, setKaspaHistoryError] = useState(false);
+  const [otc, setOtc] = useState<any>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +87,18 @@ export default function Analytics() {
       .then((rows: KaspaHashrateSample[]) => { if (!cancelled) setKaspaHistory(rows); })
       .catch(() => { if (!cancelled) setKaspaHistoryError(true); });
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const pull = () =>
+      fetch("https://mining-pool.zkas.info/api/otc/price", { headers: { Accept: "application/json" }, cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("otc price unavailable"))))
+        .then((d) => { if (!cancelled) setOtc(d); })
+        .catch(() => {});
+    pull();
+    const id = setInterval(pull, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {
@@ -180,6 +193,35 @@ export default function Analytics() {
             subtext="95% of gross reward; 5% goes to development"
           />
         </CardContainer>
+      </MainBox>
+
+      {/* ZKAS price — the project's own OTC desk (no external exchange lists ZKAS yet) */}
+      <MainBox>
+        <CardContainer title="ZKAS price · OTC desk">
+          <Card
+            title="ZKAS price (bid)"
+            value={otc?.bid ? `${otc.bid.usd} · ${numeral(otc.bid.kas).format("0,0.[00000000]")} KAS` : "—"}
+            subtext="what a seller realises on the desk"
+          />
+          <Card
+            title="24h VWAP"
+            value={otc?.vwap24h ? `${otc.vwap24h.usd} · ${numeral(otc.vwap24h.kas).format("0,0.[00000000]")} KAS` : "—"}
+            subtext={otc?.vwap24h ? `${numeral(otc.vwap24h.trades).format("0,0")} trades · ${numeral(otc.vwap24h.zkas).format("0,0")} ZKAS` : "volume-weighted, last 24h"}
+          />
+          <Card
+            title="Bid / ask spread"
+            value={otc?.spreadPct != null ? `${numeral(otc.spreadPct).format("0.0")}%` : "—"}
+            subtext={otc?.ask ? `ask ${otc.ask.usd}` : "desk quote"}
+          />
+          <Card
+            title="Last trade"
+            value={otc?.last ? otc.last.usd : "—"}
+            subtext={otc?.last?.ageSeconds != null ? `${numeral(Math.round(otc.last.ageSeconds / 60)).format("0,0")} min ago` : "most recent print"}
+          />
+        </CardContainer>
+        <p className="mt-3 max-w-3xl text-sm text-gray-500">
+          Priced on the ZKas <a className="text-primary hover:underline" href="/guide/otc/">OTC desk</a> — the project’s own peer-to-peer market, not an external exchange. USD is derived via the live KAS/USD rate{otc?.kasUsd ? ` (1 KAS ≈ $${numeral(otc.kasUsd).format("0,0.[000000]")})` : ""}. Updated {otc?.asOf ? new Date(otc.asOf).toLocaleTimeString() : "live"}.
+        </p>
       </MainBox>
 
       {/* Live work chart */}
