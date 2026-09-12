@@ -159,6 +159,44 @@ export default function Analytics() {
     };
   }, [kaspaHistory, zkasHistory]);
 
+  // Does ZKAS move Kaspa's hashrate? Overlay Kaspa daily hashrate against the
+  // ZKAS price (the merge-mining incentive), each normalised to its own range so
+  // co-movement is visible, and report the real Pearson correlation. Honest by
+  // construction: whatever r is, that's what shows.
+  const influence = useMemo(() => {
+    const kByDay = new Map<string, number>();
+    const kbuckets = new Map<string, number[]>();
+    for (const s2 of kaspaHistory) {
+      const d = new Date(s2.timestamp).toISOString().slice(0, 10);
+      (kbuckets.get(d) ?? kbuckets.set(d, []).get(d)!).push(s2.hashrate_kh / 1e9);
+    }
+    for (const [d, v] of kbuckets) kByDay.set(d, v.reduce((a, b) => a + b, 0) / v.length);
+    const pByDay = new Map<string, number>();
+    for (const p of priceHist) pByDay.set(new Date(p.x).toISOString().slice(0, 10), p.y);
+    const days = [...new Set([...kByDay.keys()].filter((d) => pByDay.has(d)))].sort();
+    const kv = days.map((d) => kByDay.get(d)!);
+    const pv = days.map((d) => pByDay.get(d)!);
+    const norm = (a: number[]) => { const lo = Math.min(...a), hi = Math.max(...a); return a.map((x) => (hi > lo ? ((x - lo) / (hi - lo)) * 100 : 50)); };
+    const kn = norm(kv), pn = norm(pv);
+    const pearson = (xs: number[], ys: number[]) => {
+      const nn = xs.length; if (nn < 3) return null;
+      const mx = xs.reduce((a, b) => a + b, 0) / nn, my = ys.reduce((a, b) => a + b, 0) / nn;
+      let c = 0, sx = 0, sy = 0;
+      for (let i = 0; i < nn; i++) { c += (xs[i] - mx) * (ys[i] - my); sx += (xs[i] - mx) ** 2; sy += (ys[i] - my) ** 2; }
+      return sx && sy ? c / Math.sqrt(sx * sy) : null;
+    };
+    const r = pearson(kv, pv);
+    const kaspaSwing = kv.length ? (Math.max(...kv) - Math.min(...kv)) / (kv.reduce((a, b) => a + b, 0) / kv.length) : 0;
+    return {
+      days,
+      kaspaNorm: days.map((d, i) => ({ x: Date.parse(`${d}T12:00:00Z`), y: kn[i] })),
+      priceNorm: days.map((d, i) => ({ x: Date.parse(`${d}T12:00:00Z`), y: pn[i] })),
+      r, kaspaSwingPct: kaspaSwing * 100,
+    };
+  }, [kaspaHistory, priceHist]);
+  const rAbs = influence.r == null ? null : Math.abs(influence.r);
+  const rWord = rAbs == null ? "—" : rAbs < 0.2 ? "no meaningful link" : rAbs < 0.4 ? "a weak link" : rAbs < 0.7 ? "a moderate link" : "a strong link";
+
   return (
     <>
       {/* Hero */}
@@ -370,7 +408,7 @@ export default function Analytics() {
           <span className="text-lg">Kaspa + ZKAS hashrate</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
-          ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty. The violet line is the ZKAS/KAS price (daily VWAP from the OTC desk) on the same log axis — sub-1 gridlines read in KAS.
+          ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty.
         </p>
         {comparison.hasData ? <>
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -384,12 +422,11 @@ export default function Analytics() {
               series={[
                 { key: "kaspa", label: "Kaspa", color: "var(--color-primary)", data: comparison.points.map((p) => ({ x: p.x, y: p.kaspa })) },
                 { key: "zkas", label: "ZKAS", color: "#f59e0b", data: comparison.points.map((p) => ({ x: p.x, y: p.zkas })) },
-                { key: "price", label: "ZKAS price (KAS)", color: "#c084fc", data: priceHist },
               ]}
               launchX={ZKAS_LAUNCH}
               formatX={dateLabel}
-              formatY={(value) => (value < 1 ? `${numeral(value).format("0,0.[0000]")} KAS` : `${numeral(value).format("0,0.[0]")}T`)}
-              ariaLabel="Daily Kaspa and ZKAS hashrate, with the ZKAS/KAS price, on a shared log scale"
+              formatY={(value) => `${numeral(value).format("0,0.[0]")}T`}
+              ariaLabel="Daily Kaspa and ZKAS network hashrate comparison"
               logY
             />
           </div>
@@ -397,6 +434,41 @@ export default function Analytics() {
         </> : <div className="rounded-2xl border border-gray-100 p-6 text-sm text-gray-500">Kaspa history is temporarily unavailable.</div>}
         {kaspaHistoryError && <p className="mt-2 text-xs text-gray-400">Kaspa’s official history endpoint did not respond; retrying on reload.</p>}
       </MainBox>
+
+      {/* Did ZKAS move Kaspa's hashrate? Honest correlation, whatever it shows. */}
+      {influence.days.length > 2 && (
+      <MainBox>
+        <div className="mb-1 flex items-center gap-x-3">
+          <Landslide className="w-6 fill-primary" />
+          <span className="text-lg">Did ZKAS move Kaspa’s hashrate?</span>
+        </div>
+        <p className="mb-4 max-w-3xl text-gray-500">
+          ZKAS is merge-mined with Kaspa, so mining ZKAS pays Kaspa miners extra at no added energy. If that reward mattered, Kaspa’s hashrate would rise and fall with the ZKAS price. Both lines below are scaled to their own range so their <em>shape</em> can be compared directly over {influence.days.length} days.
+        </p>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card title="Correlation (r)" value={influence.r == null ? "—" : numeral(influence.r).format("0.00")} subtext={`Kaspa hashrate vs ZKAS price — ${rWord}`} />
+          <Card title="Kaspa hashrate swing" value={`${numeral(influence.kaspaSwingPct).format("0.0")}%`} subtext="peak-to-trough over the window" />
+          <Card title="ZKAS share of Kaspa" value={comparison.shareLatest == null ? "—" : `${numeral(comparison.shareLatest).format("0.0")}%`} subtext="of Kaspa’s hashrate also mines ZKAS" />
+        </div>
+        <div className="rounded-2xl border border-gray-100 p-3 sm:p-5">
+          <CompareLineChart
+            series={[
+              { key: "kaspa", label: "Kaspa hashrate", color: "var(--color-primary)", data: influence.kaspaNorm },
+              { key: "price", label: "ZKAS price", color: "#c084fc", data: influence.priceNorm },
+            ]}
+            launchX={ZKAS_LAUNCH}
+            formatX={dateLabel}
+            formatY={(v) => `${numeral(v).format("0,0")}%`}
+            ariaLabel="Kaspa hashrate versus ZKAS price, each normalised to its own range, to show co-movement"
+          />
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Each series is indexed 0–100% of its own min–max, so this compares <em>direction</em>, not size. {rAbs != null && rAbs < 0.4
+            ? `The correlation is low and Kaspa’s hashrate barely moves (${numeral(influence.kaspaSwingPct).format("0.0")}% swing): ZKAS is far too small to drive Kaspa’s total today — as expected for merge mining, where ZKAS is secured BY Kaspa’s hashrate rather than adding to it.`
+            : `The two move largely together — consistent with ZKAS’s merge-mining reward drawing hashrate alongside Kaspa.`}
+        </p>
+      </MainBox>
+      )}
 
       <FooterHelper icon={Landslide}>
         The emission and supply curves are deterministic — computed from {BRAND.name}'s coinbase constants (60 ZKAS
