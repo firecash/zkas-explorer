@@ -106,7 +106,7 @@ export default function Analytics() {
     let cancelled = false;
     fetch("/price-history.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no price history"))))
-      .then((rows: { t: number; usd: number }[]) => { if (!cancelled) setPriceHist(rows.map((p) => ({ x: p.t, y: p.usd }))); })
+      .then((rows: { t: number; kas: number }[]) => { if (!cancelled) setPriceHist(rows.map((p) => ({ x: p.t, y: p.kas }))); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -234,19 +234,19 @@ export default function Analytics() {
         </p>
         {priceHist.length > 1 ? (
           <div className="mt-4 rounded-2xl border border-gray-100 p-3 sm:p-5">
-            <div className="mb-1 px-1 text-sm font-medium text-black">ZKAS price over time (USD, OTC desk mid)</div>
+            <div className="mb-1 px-1 text-sm font-medium text-black">ZKAS price over time (KAS, daily VWAP · OTC desk)</div>
             <AreaChart
               data={priceHist}
               height={260}
               formatX={dateLabel}
-              formatY={(v) => `$${numeral(v).format("0,0.[000000]")}`}
-              marker={{ x: priceHist[priceHist.length - 1].x, y: priceHist[priceHist.length - 1].y, label: `now · $${numeral(priceHist[priceHist.length - 1].y).format("0,0.[000000]")}` }}
-              ariaLabel="ZKAS price over time in USD, from the OTC desk"
+              formatY={(v) => numeral(v).format("0,0.[0000]")}
+              marker={{ x: priceHist[priceHist.length - 1].x, y: priceHist[priceHist.length - 1].y, label: `${numeral(priceHist[priceHist.length - 1].y).format("0,0.[0000]")} KAS` }}
+              ariaLabel="ZKAS price over time in KAS, daily volume-weighted average from the OTC desk"
             />
-            <p className="mt-2 px-1 text-sm text-gray-500">Hourly snapshots of the desk mid price. This curve begins when price recording started and grows over time.</p>
+            <p className="mt-2 px-1 text-sm text-gray-500">Daily volume-weighted price from every OTC-desk trade. Priced in KAS (the traded pair); at the current rate 1 KAS ≈ ${otc?.kasUsd ? numeral(otc.kasUsd).format("0,0.[000000]") : "—"}.</p>
           </div>
         ) : (
-          <p className="mt-4 rounded-2xl border border-gray-100 p-4 text-sm text-gray-500">Price curve is being recorded hourly and will appear here within a day.</p>
+          <p className="mt-4 rounded-2xl border border-gray-100 p-4 text-sm text-gray-500">Price history is loading…</p>
         )}
       </MainBox>
 
@@ -383,7 +383,7 @@ export default function Analytics() {
       <MainBox>
         <div className="mb-1 flex items-center gap-x-3">
           <Landslide className="w-6 fill-primary" />
-          <span className="text-lg">Secured by Kaspa’s hashrate</span>
+          <span className="text-lg">Kaspa + ZKAS hashrate</span>
         </div>
         <p className="mb-5 max-w-3xl text-gray-500">
           ZKAS is merge-mined with Kaspa: the same kHeavyHash work can secure both chains at once, so ZKAS inherits Kaspa-scale security at no extra energy. Kaspa’s total hashrate is set by Kaspa’s own economics — what matters for ZKAS is the <strong>share of that hashrate now also securing ZKAS</strong>, which has grown from near zero at launch. Daily averages, aligned to UTC dates; Kaspa from its official REST history, ZKAS from consensus difficulty.
@@ -392,20 +392,8 @@ export default function Analytics() {
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Card title="Kaspa · latest daily average" value={comparison.kaspa == null ? "—" : `${numeral(comparison.kaspa).format("0,0.[0]")} TH/s`} subtext="official REST history" />
             <Card title="ZKAS · latest daily average" value={comparison.zkas == null ? "—" : `${numeral(comparison.zkas).format("0,0.[0]")} TH/s`} subtext="consensus difficulty" />
-            <Card title="ZKAS share of Kaspa" value={comparison.shareLatest == null ? "—" : `${numeral(comparison.shareLatest).format("0.0")}%`} subtext="of Kaspa’s hashrate also secures ZKAS" />
+            <Card title="Kaspa / ZKAS" value={comparison.kaspa != null && comparison.zkas ? `${numeral(comparison.kaspa / comparison.zkas).format("0.0")}×` : "—"} subtext="same-day hashrate ratio" />
           </div>
-          {comparison.share.length > 1 && <div className="mb-4 rounded-2xl border border-gray-100 p-3 sm:p-5">
-            <div className="mb-1 px-1 text-sm font-medium text-black">Share of Kaspa’s hashrate also securing ZKAS</div>
-            <AreaChart
-              data={comparison.share}
-              height={260}
-              formatX={dateLabel}
-              formatY={(value) => `${numeral(value).format("0,0.[0]")}%`}
-              marker={comparison.share.length ? { x: comparison.share[comparison.share.length - 1].x, y: comparison.share[comparison.share.length - 1].y, label: `today · ${numeral(comparison.shareLatest ?? 0).format("0.0")}%` } : undefined}
-              ariaLabel="Percentage of Kaspa network hashrate that also merge-mines ZKAS, over time"
-            />
-            <p className="mt-2 px-1 text-sm text-gray-500">ZKAS-securing hashrate as a percentage of Kaspa’s, by day. Rising = more of Kaspa’s miners are opting into ZKAS merged mining.</p>
-          </div>}
           <div className="rounded-2xl border border-gray-100 p-3 sm:p-5">
             <div className="mb-1 px-1 text-sm font-medium text-black">Both networks, absolute hashrate (log scale)</div>
             <CompareLineChart
