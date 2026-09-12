@@ -79,6 +79,7 @@ export default function Analytics() {
   const [zkasHistory, setZkasHistory] = useState<ZkasWorkSample[]>([]);
   const [kaspaHistoryError, setKaspaHistoryError] = useState(false);
   const [otc, setOtc] = useState<any>(null);
+  const [priceHist, setPriceHist] = useState<{ x: number; y: number }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +100,15 @@ export default function Analytics() {
     pull();
     const id = setInterval(pull, 60_000);
     return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/price-history.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no price history"))))
+      .then((rows: { t: number; usd: number }[]) => { if (!cancelled) setPriceHist(rows.map((p) => ({ x: p.t, y: p.usd }))); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -222,6 +232,22 @@ export default function Analytics() {
         <p className="mt-3 max-w-3xl text-sm text-gray-500">
           Priced on the ZKas <a className="text-primary hover:underline" href="/guide/otc/">OTC desk</a> — the project’s own peer-to-peer market, not an external exchange. USD is derived via the live KAS/USD rate{otc?.kasUsd ? ` (1 KAS ≈ $${numeral(otc.kasUsd).format("0,0.[000000]")})` : ""}. Updated {otc?.asOf ? new Date(otc.asOf).toLocaleTimeString() : "live"}.
         </p>
+        {priceHist.length > 1 ? (
+          <div className="mt-4 rounded-2xl border border-gray-100 p-3 sm:p-5">
+            <div className="mb-1 px-1 text-sm font-medium text-black">ZKAS price over time (USD, OTC desk mid)</div>
+            <AreaChart
+              data={priceHist}
+              height={260}
+              formatX={dateLabel}
+              formatY={(v) => `$${numeral(v).format("0,0.[000000]")}`}
+              marker={{ x: priceHist[priceHist.length - 1].x, y: priceHist[priceHist.length - 1].y, label: `now · $${numeral(priceHist[priceHist.length - 1].y).format("0,0.[000000]")}` }}
+              ariaLabel="ZKAS price over time in USD, from the OTC desk"
+            />
+            <p className="mt-2 px-1 text-sm text-gray-500">Hourly snapshots of the desk mid price. This curve begins when price recording started and grows over time.</p>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-2xl border border-gray-100 p-4 text-sm text-gray-500">Price curve is being recorded hourly and will appear here within a day.</p>
+        )}
       </MainBox>
 
       {/* Live work chart */}
